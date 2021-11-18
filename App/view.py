@@ -36,8 +36,14 @@ operación solicitada
 
 def printMenu():
     print("Bienvenido")
-    print("1- Cargar información en el catálogo")
-    print("2- ")
+    print("0- Cargar información en el catálogo")
+    print("1- Encontrar puntos de interconexión aérea")
+    print("2- Encontrar clústeres de tráfico aéreo")
+    print("3- Encontrar la ruta más corta entre ciudades")
+    print("4- Utilizar las millas de viajero")
+    print("5- Cuantificar el efecto de un aeropuerto cerrado")
+    print("6- Comparar con servicio WEB externo")
+    #print("7- Visualializar gráficamente los requerimientos")
 
 catalog = None
 
