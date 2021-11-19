@@ -26,6 +26,8 @@ import controller
 from DISClib.ADT import list as lt
 assert cf
 
+routefile = 'routes_full.csv'
+initialRoute = None
 
 """
 La vista se encarga de la interacción con el usuario

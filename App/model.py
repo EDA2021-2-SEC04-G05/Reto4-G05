@@ -25,12 +25,14 @@
  """
 
 
-import config as cf
+import config
+from DISClib.ADT.graph import gr
+from DISClib.ADT import map as m
 from DISClib.ADT import list as lt
-from DISClib.ADT import map as mp
-from DISClib.DataStructures import mapentry as me
-from DISClib.Algorithms.Sorting import shellsort as sa
-assert cf
+from DISClib.Algorithms.Graphs import scc
+from DISClib.Algorithms.Graphs import dijsktra as djk
+from DISClib.Utils import error as error
+assert config
 
 """
 Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
@@ -38,8 +40,52 @@ los mismos.
 """
 
 # Construccion de modelos
+def newAnalyzer():
+    """ Inicializa el analizador
+
+   stops: Tabla de hash para guardar los vertices del grafo
+   connections: Grafo para representar las rutas entre estaciones
+   components: Almacena la informacion de los componentes conectados
+   paths: Estructura que almancena los caminos de costo minimo desde un
+           vertice determinado a todos los otros vértices del grafo
+    """
+    try:
+        analyzer = {
+                    'aeropuerto': None,
+                    'rutas': None,
+                    'components': None,
+                    'paths': None
+                    }
+
+        analyzer['aeropuerto'] = m.newMap(numelements=14000,
+                                     maptype='PROBING',
+                                     comparefunction=compareStopIds)
+
+        analyzer['rutas'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=True,
+                                              size=14000,
+                                              comparefunction=compareStopIds)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:newAnalyzer')
 
 # Funciones para agregar informacion al catalogo
+def addAirport(analyzer, route):
+    salida = route['Departure']
+    llegada = route['Destination']
+    addStop(analyzer,salida)
+    addStop(analyzer,llegada)
+    
+def addStop(analyzer, stopid):
+    """ 
+    Adiciona una estación como un vertice del grafo
+    """
+    try:
+        if not gr.containsVertex(analyzer['rutas'], stopid):
+            gr.insertVertex(analyzer['rutas'], stopid)
+        return analyzer
+    except Exception as exp:
+        error.reraise(exp, 'model:addstop')
 
 # Funciones para creacion de datos
 
