@@ -21,9 +21,8 @@
  """
 
 import config as cf
-import model
+from App import model
 import csv
-
 
 """
 El controlador se encarga de mediar entre la vista y el modelo.
@@ -39,7 +38,7 @@ def init():
     return analyzer
 
 # Funciones para la carga de datos
-def loadServices(analyzer, routefile):
+def loadServices(analyzer, routefile,airportfile):
     """
     Carga los datos de los archivos CSV en el modelo.
     Se crea un arco entre cada par de estaciones que
@@ -48,9 +47,14 @@ def loadServices(analyzer, routefile):
     addRouteConnection crea conexiones entre diferentes rutas
     servidas en una misma estación.
     """
-    routefile = cf.data_dir + routefile
+    routefile = cf.data_dir + routefile 
     input_file = csv.DictReader(open(routefile, encoding="utf-8"),
                                 delimiter=",")
+
+    airportfile = cf.data_dir + airportfile 
+    input_file2 = csv.DictReader(open(airportfile, encoding="utf-8"),
+                                delimiter=",")
+
     #lastservice = None
     """
     for service in input_file:
@@ -67,8 +71,21 @@ def loadServices(analyzer, routefile):
     for route in input_file:
         model.addAirport(analyzer,route)
         model.addRoute(analyzer,route)
+
+    for airport in input_file2:
+        model.addDataAirport(analyzer,airport)
+
+
     return analyzer
-    
 # Funciones de ordenamiento
 
 # Funciones de consulta sobre el catálogo
+def prueba(analyzer):
+    return model.prueba(analyzer)
+
+def maxinterconexion(analyzer):
+    return model.maxinterconexion(analyzer)
+
+# Funciones para enmascarar
+def iterador(lst):
+    return model.iterador(lst)

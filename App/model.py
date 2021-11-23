@@ -54,17 +54,17 @@ def newAnalyzer():
                     'aeropuerto': None,
                     'rutas': None,
                     'components': None,
-                    'paths': None
+                    'paths': None,
                     }
 
         analyzer['aeropuerto'] = m.newMap(numelements=14000,
                                      maptype='PROBING',
-                                     comparefunction=compareStopIds)
+                                     comparefunction=compareIATA)
 
         analyzer['rutas'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
                                               size=14000,
-                                              comparefunction=compareStopIds)
+                                              comparefunction=compareIATA)
         return analyzer
     except Exception as exp:
         error.reraise(exp, 'model:newAnalyzer')
@@ -75,7 +75,22 @@ def addAirport(analyzer, route):
     llegada = route['Destination']
     addStop(analyzer,salida)
     addStop(analyzer,llegada)
-    
+
+def addRoute(analyzer,route):
+    salida = route['Departure']
+    llegada = route['Destination']
+    distancia = float(route['distance_km'])
+    addConnection(analyzer, salida, llegada, distancia)
+
+def addConnection(analyzer, origin, destination, distance):
+    """
+    Adiciona un arco entre dos estaciones
+    """
+    edge = gr.getEdge(analyzer['rutas'], origin, destination)
+    if edge is None:
+        gr.addEdge(analyzer['rutas'], origin, destination, distance)
+    return analyzer
+
 def addStop(analyzer, stopid):
     """ 
     Adiciona una estación como un vertice del grafo
@@ -87,10 +102,49 @@ def addStop(analyzer, stopid):
     except Exception as exp:
         error.reraise(exp, 'model:addstop')
 
+def addDataAirport(analyzer,airport):
+    iata = airport['IATA']
+    m.put(analyzer['aeropuerto'],iata,airport)
+
 # Funciones para creacion de datos
 
 # Funciones de consulta
+def prueba(analyzer):
+    numeroAirport = m.size(analyzer['aeropuerto'])
+    numeroVertices = gr.numVertices(analyzer['rutas'])
+    numeroLados = gr.numEdges(analyzer['rutas'])
+
+    return [numeroAirport,numeroVertices,numeroLados]
+
+def maxinterconexion(analyzer):
+    lista = gr.vertices(analyzer['rutas'])
+    max = 0
+    for vertice in lt.iterator(lista):
+      total = gr.degree(analyzer['rutas'],vertice)
+      if total > max:
+        max = total
+    lstiata = lt.newList() 
+    for vertice in lt.iterator(lista):
+        if gr.degree(analyzer['rutas'],vertice) == max:
+            iata = vertice
+            dataairport = m.get(analyzer['aeropuerto'],iata)['value']
+            lt.addLast(lstiata,dataairport)
+    return (max,lstiata)
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
 # Funciones de ordenamiento
+def compareIATA(IATA1,IATA2):
+    if type(IATA2) == dict:
+        iata = IATA2['key']
+        IATA2 = iata  
+    if (IATA1 == IATA2):
+        return 0
+    elif (IATA1 > IATA2):
+        return 1
+    else:
+        return -1
+
+# Funciones para enmascarar
+def iterador(lst):
+    return lt.iterator(lst)
