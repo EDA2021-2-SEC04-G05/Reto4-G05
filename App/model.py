@@ -26,6 +26,7 @@
 
 
 import config
+from math import cos,pi
 from DISClib.ADT.graph import gr
 from DISClib.ADT import map as m
 from DISClib.ADT import list as lt
@@ -55,11 +56,16 @@ def newAnalyzer():
                     'rutas': None,
                     'components': None,
                     'paths': None,
+                    'ciudades':None
                     }
 
         analyzer['aeropuerto'] = m.newMap(numelements=14000,
                                      maptype='PROBING',
                                      comparefunction=compareIATA)
+
+        analyzer['ciudades'] = m.newMap(numelements=14000,
+                                     maptype='PROBING',
+                                     comparefunction=compareCiudades)
 
         analyzer['rutas'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
@@ -81,6 +87,10 @@ def addRoute(analyzer,route):
     llegada = route['Destination']
     distancia = float(route['distance_km'])
     addConnection(analyzer, salida, llegada, distancia)
+
+def addCity(analyzer,city):
+    cityname = city['city_ascii']
+    m.put(analyzer['ciudades'],cityname,city)
 
 def addConnection(analyzer, origin, destination, distance):
     """
@@ -113,8 +123,9 @@ def prueba(analyzer):
     numeroAirport = m.size(analyzer['aeropuerto'])
     numeroVertices = gr.numVertices(analyzer['rutas'])
     numeroLados = gr.numEdges(analyzer['rutas'])
+    numeroCiudades = m.size(analyzer['ciudades'])
 
-    return [numeroAirport,numeroVertices,numeroLados]
+    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades]
 
 def maxinterconexion(analyzer):
     lista = gr.vertices(analyzer['rutas'])
@@ -145,6 +156,30 @@ def compareIATA(IATA1,IATA2):
     else:
         return -1
 
-# Funciones para enmascarar
+def compareCiudades(ciudad1,ciudad2): 
+    if type(ciudad2) == dict:
+        ciudad = ciudad2['key']
+        ciudad2 = ciudad
+    if (ciudad1 == ciudad2):
+        return 0
+    elif (ciudad1 > ciudad2):
+        return 1
+    else:
+        return -1
+
+# Funciones adicionales
 def iterador(lst):
     return lt.iterator(lst)
+
+def areabusqueda(lat,lon,radio):
+    """
+    devuelve las coordenadas de un cuadrado con centro en el punto: (lat,lon) con un radio dado
+    """
+    radianes = radio/6371.0
+    angulo = radianes * 180/pi
+    lat_min = lat - angulo 
+    lat_max = lat + angulo
+    lon_min = (lon - angulo) / cos(lat *(pi/180))
+    lon_max = (lon + angulo) / cos(lat *(pi/180))
+    
+    return [lat_min,lat_max,lon_min,lon_max]

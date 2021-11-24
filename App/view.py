@@ -32,6 +32,7 @@ assert config
 
 routefile = 'routes_full.csv'
 airportfile = 'airports_full.csv'
+cityfile = 'worldcities.csv'
 initialRoute = None
 
 """
@@ -142,11 +143,12 @@ while True:
     if int(inputs[0]) == 0:
         print("Cargando información de los archivos ....")
         cont = controller.init()
-        controller.loadServices(cont, routefile,airportfile)
+        controller.loadServices(cont, routefile,airportfile,cityfile)
         carga = prueba(cont)
         print('El total de aeropuertos cargados es: ' + str(carga[0]))
         print('El total de vertices cargados es: ' + str(carga[1]))
         print('El número de rutas cargadas es: ' + str(carga[2]))
+        print('El número de ciudades cargadas es: ' + str(carga[3]))
 
     elif int(inputs[0]) == 1:
         print('Determinando aeropuerto asociado a mayor número de rutas... ')
@@ -155,6 +157,11 @@ while True:
         maxaero(total[1])
         print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
         printmap(total[1])
+
+    elif int(inputs[0]) == 3:
+        ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+        ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
+        
 
     else:
         sys.exit(0)

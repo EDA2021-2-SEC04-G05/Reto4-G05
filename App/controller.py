@@ -38,7 +38,7 @@ def init():
     return analyzer
 
 # Funciones para la carga de datos
-def loadServices(analyzer, routefile,airportfile):
+def loadServices(analyzer, routefile,airportfile,cityfile):
     """
     Carga los datos de los archivos CSV en el modelo.
     Se crea un arco entre cada par de estaciones que
@@ -54,6 +54,10 @@ def loadServices(analyzer, routefile,airportfile):
     airportfile = cf.data_dir + airportfile 
     input_file2 = csv.DictReader(open(airportfile, encoding="utf-8"),
                                 delimiter=",")
+
+    cityfile = cf.data_dir + cityfile 
+    input_file3 = csv.DictReader(open(cityfile, encoding="utf-8"),
+                                delimiter=",")                            
 
     #lastservice = None
     """
@@ -75,6 +79,8 @@ def loadServices(analyzer, routefile,airportfile):
     for airport in input_file2:
         model.addDataAirport(analyzer,airport)
 
+    for city in input_file3:
+        model.addCity(analyzer,city)
 
     return analyzer
 # Funciones de ordenamiento
