@@ -158,6 +158,12 @@ while True:
         print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
         printmap(total[1])
 
+
+    elif int(inputs[0]) == 2:
+        pass
+
+
+
     elif int(inputs[0]) == 3:
         ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
         ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
