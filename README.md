@@ -1,5 +1,6 @@
 #ISIS1225 - Librerias de soporte
 
+Santiago Forero, 202111446, s.forerog2@uniandes.edu.co
 Akshaya Arunachalam, 202020637, a.arunachalam@uniandes.edu.co 
 
 Este proyecto contiene los Tipos abstractos de datos, estructuras de datos y algoritmos requeridos por el curso ISIS1225-Estructuras de Datos y Algoritmos
