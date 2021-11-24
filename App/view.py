@@ -79,6 +79,17 @@ def maxaero(lstaero):
         x.add_row(renglon)
     print(x)
 
+
+
+def printClusteres(result):
+    x = PrettyTable()
+    x.field_names = ['Num. Total Clústeres', "Están Conectados"]
+    renglon = [salto(str(result[0]),18),salto(str(result[1]),18)]
+    x.add_row(renglon)
+    print(x)
+
+
+
 def printmap(listaaero):
 
     numeroaero = 0
@@ -137,39 +148,60 @@ def printmap(listaaero):
 """
 Menu principal
 """
-while True:
-    printMenu()
-    inputs = input('Seleccione una opción para continuar\n')
-    if int(inputs[0]) == 0:
-        print("Cargando información de los archivos ....")
-        cont = controller.init()
-        controller.loadServices(cont, routefile,airportfile,cityfile)
-        carga = prueba(cont)
-        print('El total de aeropuertos cargados es: ' + str(carga[0]))
-        print('El total de vertices cargados es: ' + str(carga[1]))
-        print('El número de rutas cargadas es: ' + str(carga[2]))
-        print('El número de ciudades cargadas es: ' + str(carga[3]))
+def thread_cycle():
+    while True:
+        printMenu()
+        inputs = input('Seleccione una opción para continuar\n')
+        if int(inputs[0]) == 0:
+            print("Cargando información de los archivos ....")
+            cont = controller.init()
+            controller.loadServices(cont, routefile,airportfile,cityfile)
+            carga = prueba(cont)
+            print('El total de aeropuertos cargados es: ' + str(carga[0]))
+            print('El total de vertices cargados es: ' + str(carga[1]))
+            print('El número de rutas cargadas es: ' + str(carga[2]))
+            print('El número de ciudades cargadas es: ' + str(carga[3]))
 
-    elif int(inputs[0]) == 1:
-        print('Determinando aeropuerto asociado a mayor número de rutas... ')
-        total = controller.maxinterconexion(cont)
-        print('El maximo numero de rutas asociado a un aeropuerto es ' + str(total[0]))
-        maxaero(total[1])
-        print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
-        printmap(total[1])
-
-
-    elif int(inputs[0]) == 2:
-        pass
+        elif int(inputs[0]) == 1:
+            print('Determinando aeropuerto asociado a mayor número de rutas... ')
+            total = controller.maxinterconexion(cont)
+            print('El maximo numero de rutas asociado a un aeropuerto es ' + str(total[0]))
+            maxaero(total[1])
+            print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
+            printmap(total[1])
 
 
+        elif int(inputs[0]) == 2:
+            print("Encontrando clústeres de tráfico aéreo... ")
+            aeropuertoinicial = input('Ingrese el aeropuerto de origen (código IATA) : ')
+            aeropuertofinal = input('Ingrese el aeropuerto de destino (código IATA) : ')
+            result = controller.encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal)
+            printClusteres(result)
+            print("Número total de clústeres presentes en la red de transporte aéreo: " + str(result[0]))
+            if result[1]:
+                valor = " sí"
+            else:
+                valor = "no"
+            print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
+            
 
-    elif int(inputs[0]) == 3:
-        ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
-        ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
-        
 
-    else:
-        sys.exit(0)
-sys.exit(0)
+
+        elif int(inputs[0]) == 3:
+            ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+            ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
+            
+
+        else:
+            sys.exit(0)
+    sys.exit(0)
+
+
+
+if __name__ == "__main__":
+    threading.stack_size(67108864)  # 64MB stack
+    sys.setrecursionlimit(2 ** 20)
+    thread = threading.Thread(target=thread_cycle)
+    thread.start()
+
 

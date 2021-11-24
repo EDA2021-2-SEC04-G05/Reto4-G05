@@ -142,6 +142,18 @@ def maxinterconexion(analyzer):
             lt.addLast(lstiata,dataairport)
     return (max,lstiata)
 
+
+
+def encontrarClusteres(analyzer,aeroI,aeroF):
+    """
+    Req 2
+    """
+    analyzer['components'] = scc.KosarajuSCC(analyzer['rutas'])
+    total = scc.connectedComponents(analyzer['components'])
+    unidos = scc.stronglyConnected(analyzer['components'], aeroI, aeroF)
+    return total, unidos
+
+
 # Funciones utilizadas para comparar elementos dentro de una lista
 
 # Funciones de ordenamiento
