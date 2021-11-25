@@ -172,16 +172,16 @@ def thread_cycle():
 
 
         elif int(inputs[0]) == 2:
+            aeropuertoinicial = input('Ingrese el primer aeropuerto (código IATA) : ').upper()
+            aeropuertofinal = input('Ingrese el segundo aeropuerto (código IATA) : ').upper()
             print("Encontrando clústeres de tráfico aéreo... ")
-            aeropuertoinicial = input('Ingrese el aeropuerto de origen (código IATA) : ')
-            aeropuertofinal = input('Ingrese el aeropuerto de destino (código IATA) : ')
             result = controller.encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal)
             printClusteres(result)
             print("Número total de clústeres presentes en la red de transporte aéreo: " + str(result[0]))
-            if result[1]:
+            if result[1] == True:
                 valor = " sí"
             else:
-                valor = "no"
+                valor = " no"
             print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
             
 
@@ -191,6 +191,19 @@ def thread_cycle():
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
             ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
             
+
+
+
+        elif int(inputs[0]) == 4:
+            ciudad = input('Ingrese la ciudad de origen (código ascii) : ')
+            millas = int(input('Ingrese la cantidad de millas que tiene disponibles: '))
+            result = controller.usarMillas(cont, ciudad, millas)
+            
+            
+
+
+
+
 
         else:
             sys.exit(0)

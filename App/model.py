@@ -154,6 +154,29 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
     return total, unidos
 
 
+
+
+
+
+
+
+
+
+
+def usarMillas(analyzer, ciudad, millas):
+    """
+    Req 4
+    """
+    distancia = millas/1.6
+    analyzer["paths"] = djk.Dijkstra(analyzer["rutas"], ciudad)
+    print(analyzer["paths"]['source'])
+    print(analyzer["paths"]['iminpq'])
+
+
+
+
+
+
 # Funciones utilizadas para comparar elementos dentro de una lista
 
 # Funciones de ordenamiento

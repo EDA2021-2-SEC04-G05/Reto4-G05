@@ -96,6 +96,12 @@ def maxinterconexion(analyzer):
 def encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal):
     return model.encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal)
 
+
+
+
+def usarMillas(cont, ciudad, millas):
+    return model.usarMillas(cont, ciudad, millas)
+
 # Funciones para enmascarar
 def iterador(lst):
     return model.iterador(lst)
