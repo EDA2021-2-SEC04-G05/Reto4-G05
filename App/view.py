@@ -184,13 +184,12 @@ def thread_cycle():
                 valor = "no"
             print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
             
-
-
-
         elif int(inputs[0]) == 3:
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
             ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
-            
+            aeropuertoinicial = controller.cityToairport(cont,ciudadinicial)
+            aeropuertodestino = controller.cityToairport(cont,ciudadfinal)
+            print(aeropuertoinicial['IATA'],aeropuertofinal['IATA'])
 
         else:
             sys.exit(0)

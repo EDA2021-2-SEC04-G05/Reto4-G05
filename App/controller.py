@@ -92,9 +92,11 @@ def prueba(analyzer):
 def maxinterconexion(analyzer):
     return model.maxinterconexion(analyzer)
 
-
 def encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal):
     return model.encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal)
+
+def cityToairport(analyzer,ciudad):
+    return model.cityToairport(analyzer,ciudad)
 
 # Funciones para enmascarar
 def iterador(lst):

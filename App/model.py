@@ -26,7 +26,7 @@
 
 
 import config
-from math import cos,pi
+from math import cos,pi,sin,asin,sqrt
 from DISClib.ADT.graph import gr
 from DISClib.ADT import map as m
 from DISClib.ADT import list as lt
@@ -142,8 +142,6 @@ def maxinterconexion(analyzer):
             lt.addLast(lstiata,dataairport)
     return (max,lstiata)
 
-
-
 def encontrarClusteres(analyzer,aeroI,aeroF):
     """
     Req 2
@@ -153,6 +151,38 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
     unidos = scc.stronglyConnected(analyzer['components'], aeroI, aeroF)
     return total, unidos
 
+def cityToairport(analyzer,ciudad):
+    """
+    asocia aeropuerto mas cercano a una ciudad dada 
+    en primer lugar, hace una lista de los aeropuertos a menos de 10km de la ciudad, sino encuentra ninguno
+    aumenta el radio de busqueda a 20km y seguira aumentando el radio de busqueda haata encontrar algun aeropuerto
+    si en la región de busqueda hay mas de un aeropuerto se selecciona el aeropuerto mas cercano a la ciudad 
+    """
+    citydata = m.get(analyzer['ciudades'],ciudad)['value']
+    citylat = float(citydata['lat'])
+    citylon = float(citydata['lng'])
+    lista = lt.newList()
+    km = 10
+    while lt.size(lista) == 0:
+      area = areabusqueda(citylat,citylon,km) 
+      for aero in lt.iterator(m.valueSet(analyzer['aeropuerto'])):
+          aeroLat = float(aero['Latitude'])
+          aeroLon = float(aero['Longitude'])
+          if area[0] <= aeroLat and area[1] >= aeroLat:
+              if area[2] <= aeroLon and area[3] >= aeroLon:
+                  lt.addLast(lista,aero)
+    km += 10 
+
+    if lt.size(lista) == 1:
+        return lt.getElement(lista,1)
+    else:
+        min = km 
+        aeropuerto = None
+        for aero in lt.iterator(lista):
+            if dist(citylat,citylon, float(aero['Latitude']), float(aero['Longitude'])) < min:
+                min = dist(citylat,citylon, float(aero['Latitude']), float(aero['Longitude']))
+                aeropuerto = aero
+        return aeropuerto 
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
@@ -193,5 +223,13 @@ def areabusqueda(lat,lon,radio):
     lat_max = lat + angulo
     lon_min = (lon - angulo) / cos(lat *(pi/180))
     lon_max = (lon + angulo) / cos(lat *(pi/180))
-    
+
     return [lat_min,lat_max,lon_min,lon_max]
+
+def dist(lat1,lat2,lon1,lon2):
+    """
+    devuelve la distancia en km entre dos puntos del planeta
+    """
+    v1 = sin((lat2-lat1)/2)
+    v2 = sin((lon2-lon1)/2)
+    return 2 * 6367 * asin(sqrt(v1**2 + cos(lat1) * cos(lat2) * v2 ** 2))
