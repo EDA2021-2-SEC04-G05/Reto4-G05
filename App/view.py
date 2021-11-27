@@ -90,6 +90,15 @@ def printClusteres(result):
 
 
 
+def printMillas(result):
+    x = PrettyTable()
+    x.field_names = ['Numero de nodos', "Costo total [km]"]
+    renglon = [salto(str(result[0]),18),salto(str(round(result[1],2)),18)]
+    x.add_row(renglon)
+    print(x)
+
+
+
 def printmap(listaaero):
 
     numeroaero = 0
@@ -161,6 +170,8 @@ def thread_cycle():
             print('El total de vertices cargados es: ' + str(carga[1]))
             print('El número de rutas cargadas es: ' + str(carga[2]))
             print('El número de ciudades cargadas es: ' + str(carga[3]))
+            print('El total de vertices cargados es: ' + str(carga[4]))
+            print('El número de rutas cargadas es: ' + str(carga[5]))
 
         elif int(inputs[0]) == 1:
             print('Determinando aeropuerto asociado a mayor número de rutas... ')
@@ -183,6 +194,8 @@ def thread_cycle():
             else:
                 valor = " no"
             print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
+            print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
+            printmap(result[2])
             
 
 
@@ -198,6 +211,8 @@ def thread_cycle():
             ciudad = input('Ingrese la ciudad de origen (código ascii) : ')
             millas = int(input('Ingrese la cantidad de millas que tiene disponibles: '))
             result = controller.usarMillas(cont, ciudad, millas)
+            print("Red de expansión mínima: ")
+            printMillas(result)
             
             
 

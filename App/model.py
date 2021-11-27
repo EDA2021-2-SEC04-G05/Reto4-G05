@@ -32,6 +32,7 @@ from DISClib.ADT import map as m
 from DISClib.ADT import list as lt
 from DISClib.Algorithms.Graphs import scc
 from DISClib.Algorithms.Graphs import dijsktra as djk
+from DISClib.Algorithms.Graphs import prim
 from DISClib.Utils import error as error
 assert config
 
@@ -56,7 +57,8 @@ def newAnalyzer():
                     'rutas': None,
                     'components': None,
                     'paths': None,
-                    'ciudades':None
+                    'ciudades': None,
+                    'red': None,
                     }
 
         analyzer['aeropuerto'] = m.newMap(numelements=14000,
@@ -69,6 +71,11 @@ def newAnalyzer():
 
         analyzer['rutas'] = gr.newGraph(datastructure='ADJ_LIST',
                                               directed=True,
+                                              size=14000,
+                                              comparefunction=compareIATA)
+
+        analyzer['rutasNoDirigido'] = gr.newGraph(datastructure='ADJ_LIST',
+                                              directed=False,
                                               size=14000,
                                               comparefunction=compareIATA)
         return analyzer
@@ -99,6 +106,8 @@ def addConnection(analyzer, origin, destination, distance):
     edge = gr.getEdge(analyzer['rutas'], origin, destination)
     if edge is None:
         gr.addEdge(analyzer['rutas'], origin, destination, distance)
+        if gr.getEdge(analyzer['rutas'], destination, origin):
+            gr.addEdge(analyzer['rutasNoDirigido'], origin, destination, distance)
     return analyzer
 
 def addStop(analyzer, stopid):
@@ -108,6 +117,8 @@ def addStop(analyzer, stopid):
     try:
         if not gr.containsVertex(analyzer['rutas'], stopid):
             gr.insertVertex(analyzer['rutas'], stopid)
+        if not gr.containsVertex(analyzer['rutasNoDirigido'], stopid):
+            gr.insertVertex(analyzer['rutasNoDirigido'], stopid)
         return analyzer
     except Exception as exp:
         error.reraise(exp, 'model:addstop')
@@ -124,8 +135,10 @@ def prueba(analyzer):
     numeroVertices = gr.numVertices(analyzer['rutas'])
     numeroLados = gr.numEdges(analyzer['rutas'])
     numeroCiudades = m.size(analyzer['ciudades'])
+    numeroVertices2 = gr.numVertices(analyzer['rutasNoDirigido'])
+    numeroLados2 = gr.numEdges(analyzer['rutasNoDirigido'])
 
-    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades]
+    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades,numeroVertices2,numeroLados2]
 
 def maxinterconexion(analyzer):
     lista = gr.vertices(analyzer['rutas'])
@@ -151,7 +164,12 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
     analyzer['components'] = scc.KosarajuSCC(analyzer['rutas'])
     total = scc.connectedComponents(analyzer['components'])
     unidos = scc.stronglyConnected(analyzer['components'], aeroI, aeroF)
-    return total, unidos
+    lstiata = lt.newList() 
+    dataairport1 = m.get(analyzer['aeropuerto'],aeroI)['value']
+    lt.addLast(lstiata,dataairport1)
+    dataairport2 = m.get(analyzer['aeropuerto'],aeroF)['value']
+    lt.addLast(lstiata,dataairport2)
+    return total, unidos, lstiata
 
 
 
@@ -167,10 +185,28 @@ def usarMillas(analyzer, ciudad, millas):
     """
     Req 4
     """
-    distancia = millas/1.6
-    analyzer["paths"] = djk.Dijkstra(analyzer["rutas"], ciudad)
-    print(analyzer["paths"]['source'])
-    print(analyzer["paths"]['iminpq'])
+    distancia = millas/3.2
+    analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
+    numNodos = m.size(analyzer["red"]['distTo'])
+    costoTotal = prim.weightMST(analyzer["rutasNoDirigido"],analyzer["red"])
+    visitadas = lt.newList(datastructure='ARRAY_LIST')
+    recorrido = m.get(analyzer["red"]['distTo'], ciudad)['value']
+    while distancia - recorrido >= 0:
+        distancia -= recorrido
+        aeropuerto = m.get(analyzer["red"]['edgeTo'], ciudad)['value']['vertexA']
+        lt.addLast(visitadas, aeropuerto)
+        ciudad = aeropuerto
+        recorrido = m.get(analyzer["red"]['distTo'], ciudad)['value']
+    ciudades = lt.newList(datastructure='ARRAY_LIST')
+    for aero in lt.iterator(visitadas):
+        ciudad = "-----"
+        lt.addLast(ciudades,ciudad)
+        
+    return numNodos, costoTotal, ciudades
+  
+ 
+    
+
 
 
 
