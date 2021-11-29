@@ -186,10 +186,75 @@ def thread_cycle():
             
         elif int(inputs[0]) == 3:
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+            lciudades1 = controller.mget(cont['ciudades'],ciudadinicial)
+            while lciudades1 == None:
+                print('No se encontro la ciudad,verifique que esta bien escrito el nombre')
+                ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+                lciudades1  = controller.mget(cont['ciudades'],ciudadinicial)
+            if controller.ltsize(lciudades1['value']) == 1:
+                print('Se encontro una coincidencia entre el nombre de las ciudades')
+                citydatai = controller.ltgetElement(lciudades1['value'],1)
+                x = PrettyTable()
+                x.field_names = ['Ciudad','Pais','Latitud','Longitud']
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    x.add_row(renglon)
+                print(x)
+            else:
+                print('Se encontraron ' + str(controller.ltsize(lciudades1['value'])) + ' coincidencias para la ciudad dada: ')
+                x = PrettyTable()
+                x.field_names = ['Opción','Ciudad','Pais','Latitud','Longitud']
+                pos = 1 
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [str(pos),salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    pos += 1 
+                    x.add_row(renglon)
+                print(x)
+                selec = int(input('Ingrese la opción correspondiente a la ciudad: '))
+                citydatai = controller.ltgetElement(lciudades1['value'],selec)
+                
             ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
-            aeropuertoinicial = controller.cityToairport(cont,ciudadinicial)
-            aeropuertodestino = controller.cityToairport(cont,ciudadfinal)
-            print(aeropuertoinicial['IATA'],aeropuertofinal['IATA'])
+            lciudades2 = controller.mget(cont['ciudades'],ciudadfinal)
+            while lciudades2 == None:
+                print('No se encontro la ciudad,verifique que esta bien escrito el nombre')
+                ciudadfinal= input('Ingrese la ciudad de destino (código ascii) : ')
+                lciudades2  = controller.mget(cont['ciudades'],ciudadfinal)
+            if controller.ltsize(lciudades2['value']) == 1:
+                print('Se encontro una coincidencia entre el nombre de las ciudades')
+                citydataf = controller.ltgetElement(lciudades2['value'],1)
+                x = PrettyTable()
+                x.field_names = ['Ciudad','Pais','Latitud','Longitud']
+                for ciudad in controller.iterador(lciudades2['value']):
+                    renglon = [salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    x.add_row(renglon)
+                print(x)
+            else:
+                print('Se encontraron ' + str(controller.ltsize(lciudades2['value'])) + ' coincidencias para la ciudad dada: ')
+                x = PrettyTable()
+                x.field_names = ['Opción','Ciudad','Pais','Latitud','Longitud']
+                pos = 1 
+                for ciudad in controller.iterador(lciudades2['value']):
+                    renglon = [str(pos),salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    pos += 1 
+                    x.add_row(renglon)
+                print(x)
+                selec = int(input('Ingrese la opción correspondiente a la ciudad: '))
+                citydataf = controller.ltgetElement(lciudades2['value'],selec)
+            print('Determinando aeropuertos mas cercanos...') 
+            aeropuertoinicial = controller.cityToairport(cont,citydatai)
+            aeropuertodestino = controller.cityToairport(cont,citydataf)
+            print('Aeropuertos mas cercanos encontrados...')
+            print('Determinando la ruta mas corta... ')
+            cont['paths'] = controller.rutasMin(cont['rutas'],aeropuertoinicial['IATA'])
+            camino = controller.camino(cont['paths'],aeropuertodestino['IATA'])
+            if camino is not None:
+                pathlen = stack.size(camino)
+                print('El camino es de longitud: ' + str(pathlen))
+                while (not stack.isEmpty(camino)):
+                    stop = stack.pop(camino)
+                    print(stop)
+            else:
+                print('No hay camino')
 
         else:
             sys.exit(0)

@@ -98,6 +98,21 @@ def encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal):
 def cityToairport(analyzer,ciudad):
     return model.cityToairport(analyzer,ciudad)
 
+def rutasMin(grafo,vertice):
+    return model.rutasMin(grafo,vertice)
+
+def camino(paths,vertice):
+    return model.camino(paths,vertice)
+
 # Funciones para enmascarar
 def iterador(lst):
     return model.iterador(lst)
+
+def mget(map,llave):
+    return model.mget(map,llave)
+
+def ltsize(lista):
+    return model.ltsize(lista)
+
+def ltgetElement(lista,pos):
+    return model.ltgetElement(lista,pos)
