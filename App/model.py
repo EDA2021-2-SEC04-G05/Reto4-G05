@@ -26,7 +26,7 @@
 
 
 import config
-from math import cos,pi
+from math import cos,pi,sin,asin,sqrt
 from DISClib.ADT.graph import gr
 from DISClib.ADT import map as m
 from DISClib.ADT import list as lt
@@ -185,29 +185,34 @@ def usarMillas(analyzer, ciudad, millas):
     """
     Req 4
     """
+    aeropuerto = cityToairport(analyzer,ciudad)
     distancia = millas/3.2
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     numNodos = m.size(analyzer["red"]['distTo'])
     costoTotal = prim.weightMST(analyzer["rutasNoDirigido"],analyzer["red"])
     visitadas = lt.newList(datastructure='ARRAY_LIST')
-    recorrido = m.get(analyzer["red"]['distTo'], ciudad)['value']
+    recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
     while distancia - recorrido >= 0:
         distancia -= recorrido
-        aeropuerto = m.get(analyzer["red"]['edgeTo'], ciudad)['value']['vertexA']
-        lt.addLast(visitadas, aeropuerto)
-        ciudad = aeropuerto
-        recorrido = m.get(analyzer["red"]['distTo'], ciudad)['value']
+        aero = m.get(analyzer["red"]['edgeTo'], aeropuerto)['value']['vertexA']
+        lt.addLast(visitadas, aero)
+        aeropuerto = aero
+        recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
     ciudades = lt.newList(datastructure='ARRAY_LIST')
-    for aero in lt.iterator(visitadas):
-        ciudad = "-----"
+    for i in range (1,4):
+        aero = lt.getElement(visitadas,i)
+        ciudad = airportTocity(analyzer, aero)
+        lt.addLast(ciudades,ciudad)
+    tamanio = lt.size(visitadas)
+    for i in range (tamanio-2,tamanio+1):
+        aero = lt.getElement(visitadas,i)
+        ciudad = airportTocity(analyzer, aero)
         lt.addLast(ciudades,ciudad)
         
     return numNodos, costoTotal, ciudades
   
  
     
-
-
 
 
 
@@ -254,3 +259,4 @@ def areabusqueda(lat,lon,radio):
     lon_max = (lon + angulo) / cos(lat *(pi/180))
     
     return [lat_min,lat_max,lon_min,lon_max]
+

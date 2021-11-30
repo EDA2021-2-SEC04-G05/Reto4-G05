@@ -24,6 +24,7 @@ import sys
 import config
 import threading
 import folium
+import json
 from flask import Flask
 from App import controller
 from DISClib.ADT import stack
@@ -96,6 +97,13 @@ def printMillas(result):
     renglon = [salto(str(result[0]),18),salto(str(round(result[1],2)),18)]
     x.add_row(renglon)
     print(x)
+    print("Se recomiendan visitar las siguientes ciudades de acuerdo a la cantidad de millas:")
+    y = PrettyTable()
+    y.field_names = ['Ciudades']
+    for ciudad in controller.iterator(result[3]):
+        renglon = [salto(str(ciudad["city"]),18)]
+        y.add_row(renglon)
+    print(y)
 
 
 
@@ -213,8 +221,7 @@ def thread_cycle():
             result = controller.usarMillas(cont, ciudad, millas)
             print("Red de expansión mínima: ")
             printMillas(result)
-            
-            
+        
 
 
 
@@ -227,6 +234,7 @@ def thread_cycle():
 
 
 if __name__ == "__main__":
+    ruta = "Data/AirportNearestRelevant_v1_Version_1.0_swagger_specification.json"
     threading.stack_size(67108864)  # 64MB stack
     sys.setrecursionlimit(2 ** 20)
     thread = threading.Thread(target=thread_cycle)
