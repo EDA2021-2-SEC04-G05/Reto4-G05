@@ -25,10 +25,16 @@
  """
 
 
+import requests
+from requests.api import request
+from requests.models import LocationParseError
 import config
+import folium
+import json
 from math import cos,pi,sin,asin,sqrt
 from DISClib.ADT.graph import gr
 from DISClib.ADT import map as m
+from DISClib.DataStructures import mapentry as me
 from DISClib.ADT import list as lt
 from DISClib.Algorithms.Graphs import scc
 from DISClib.Algorithms.Graphs import dijsktra as djk
@@ -169,6 +175,25 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
     lt.addLast(lstiata,dataairport1)
     dataairport2 = m.get(analyzer['aeropuerto'],aeroF)['value']
     lt.addLast(lstiata,dataairport2)
+    
+    map = folium.Map()
+    cluster1 = me.getValue(m.get(analyzer['components']["idscc"],aeroI))
+    cluster2 = me.getValue(m.get(analyzer['components']["idscc"],aeroF))
+    lstcluster1 = lt.newList(datastructure='ARRAY_LIST')
+    lstcluster2 = lt.newList(datastructure='ARRAY_LIST')
+    for aero1 in lt.iterator(m.keySet(analyzer['components']["idscc"])):
+        if me.getValue(m.get(analyzer['components']["idscc"],aero1)) == cluster1:
+            lt.addLast(lstcluster1,aero1)
+        if not unidos and me.getValue(m.get(analyzer['components']["idscc"],aero1)) == cluster2:
+            lt.addLast(lstcluster2,aero1)
+    for aeroIata in lt.iterator(lstcluster1):
+        a = me.getValue(m.get(analyzer["aeropuerto"],aeroIata))
+        folium.Marker(location=[a["Latitude"], a["Longitude"]], icon=folium.Icon(color="red")).add_to(map)
+    for aeroIata in lt.iterator(lstcluster2):
+        a = me.getValue(m.get(analyzer["aeropuerto"],aeroIata))
+        folium.Marker(location=[a["Latitude"], a["Longitude"]], icon=folium.Icon(color="blue")).add_to(map)
+    map.save("mapaClústeres.html")
+    
     return total, unidos, lstiata
 
 
@@ -183,8 +208,22 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
 
 def usarMillas(analyzer, ciudad, millas):
     """
+    GRAFICAR
+    map = folium.Map()
+    for aero in lt.iterator(m.keySet(analyzer['red']["distTo"])):
+        print(aero)
+    for aero in lt.iterator(m.valueSet(analyzer['red']["edgeTo"])):
+        a = me.getValue(m.get(analyzer["aeropuerto"],aero["vertexA"]))
+        b = me.getValue(m.get(analyzer["aeropuerto"],aero["vertexB"]))
+        folium.Marker(location=[a["Latitude"], a["Longitude"]]).add_to(map)
+        folium.Marker(location=[b["Latitude"], b["Longitude"]]).add_to(map)
+        folium.PolyLine(locations=[[float(a["Latitude"]), float(a["Longitude"])],[float(b["Latitude"]), float(b["Longitude"])]]).add_to(map)
+    map.save("mapaUFOS.html")
+    """
+    """
     Req 4
     """
+    analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     aeropuerto = cityToairport(analyzer,ciudad)
     distancia = millas/3.2
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
@@ -199,18 +238,58 @@ def usarMillas(analyzer, ciudad, millas):
         aeropuerto = aero
         recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
     ciudades = lt.newList(datastructure='ARRAY_LIST')
-    for i in range (1,4):
-        aero = lt.getElement(visitadas,i)
-        ciudad = airportTocity(analyzer, aero)
-        lt.addLast(ciudades,ciudad)
-    tamanio = lt.size(visitadas)
-    for i in range (tamanio-2,tamanio+1):
+    for i in lt.iterator(ciudades):
         aero = lt.getElement(visitadas,i)
         ciudad = airportTocity(analyzer, aero)
         lt.addLast(ciudades,ciudad)
         
     return numNodos, costoTotal, ciudades
+    
+
+
+
+def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
+    """
+    Req 6
+    """
+    url = "https://test.api.amadeus.com/v1/security/oauth2/token"
+    h = {'content-type':  "application/x-www-form-urlencoded"}
+    datos = "grant_type=client_credentials&client_id=iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l&client_secret=ZuKeobzwsVU6Es7g"
+    response = requests.post(url, data=datos, headers= h)
+    response_dict = json.loads(response.text)
+    token = response_dict["access_token"]
+    latI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lat"])
+    lngI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lng"])
+    
+    url = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latI+"&longitude="+lngI
+    print(url)
+    h = {'Authorization':  "Bearer "+token}
+    response2 = requests.post(url, headers= h)
+    print(response2.content)
+    
+    """
+    latF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lat"])
+    lngF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lng"])
+    """
+
+
+    pass
+
   
+
+"""
+
+    "type": "amadeusOAuth2Token",
+    "username": "s.forerog2@uniandes.edu.co",
+    "application_name": "Reto 4",
+    "client_id": "iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l",
+    "token_type": "Bearer",
+    "access_token": "mdd3fVwDsPVahTkdulBmh9Y7HjSt",
+    "expires_in": 1799,
+    "state": "approved",
+    "scope": ""
+
+"""
  
     
 

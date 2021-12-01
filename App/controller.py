@@ -102,6 +102,12 @@ def encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal):
 def usarMillas(cont, ciudad, millas):
     return model.usarMillas(cont, ciudad, millas)
 
+
+
+def servicioWebExterno(cont, ciudadinicial, ciudadfinal):
+    return model.servicioWebExterno(cont, ciudadinicial, ciudadfinal)
+
+
 # Funciones para enmascarar
 def iterador(lst):
     return model.iterador(lst)

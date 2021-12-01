@@ -88,6 +88,7 @@ def printClusteres(result):
     renglon = [salto(str(result[0]),18),salto(str(result[1]),18)]
     x.add_row(renglon)
     print(x)
+    
 
 
 
@@ -100,7 +101,7 @@ def printMillas(result):
     print("Se recomiendan visitar las siguientes ciudades de acuerdo a la cantidad de millas:")
     y = PrettyTable()
     y.field_names = ['Ciudades']
-    for ciudad in controller.iterator(result[3]):
+    for ciudad in controller.iterador(result[3]):
         renglon = [salto(str(ciudad["city"]),18)]
         y.add_row(renglon)
     print(y)
@@ -202,8 +203,7 @@ def thread_cycle():
             else:
                 valor = " no"
             print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
-            print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
-            printmap(result[2])
+            print("Se generó el archivo HTML, puede verse en la carpeta Reto4-G05")
             
 
 
@@ -224,6 +224,12 @@ def thread_cycle():
         
 
 
+        elif int(inputs[0]) == 6:
+            
+            ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+            ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
+            
+            result = controller.servicioWebExterno(cont, ciudadinicial, ciudadfinal)
 
 
 
