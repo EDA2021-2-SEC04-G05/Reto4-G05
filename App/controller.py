@@ -116,3 +116,9 @@ def ltsize(lista):
 
 def ltgetElement(lista,pos):
     return model.ltgetElement(lista,pos)
+
+def ltnewList():
+    return model.ltnewList()
+
+def ltAddLast(lista,elem):
+    return model.ltAddLast(lista,elem)

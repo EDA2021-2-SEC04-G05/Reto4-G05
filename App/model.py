@@ -260,3 +260,9 @@ def ltsize(lista):
 
 def ltgetElement(lista,pos):
     return lt.getElement(lista,pos)
+
+def ltnewList():
+    return lt.newList()
+
+def ltAddLast(lista,elem):
+    return lt.addLast(lista,elem)
