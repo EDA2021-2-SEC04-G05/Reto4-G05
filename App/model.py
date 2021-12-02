@@ -66,7 +66,6 @@ def newAnalyzer():
                     'paths': None,
                     'ciudades': None,
                     'red': None,
-                    'ciudadesLng': None,
                     'aeropuertoLng': None
                     }
 
@@ -87,9 +86,6 @@ def newAnalyzer():
                                               directed=False,
                                               size=14000,
                                               comparefunction=compareIATA)
-
-        analyzer['ciudadesLng'] = om.newMap(omaptype='RBT',
-                                      comparefunction=compareLongitude)
 
         analyzer['aeropuertoLng'] = om.newMap(omaptype='RBT',
                                       comparefunction=compareLongitude)
@@ -121,9 +117,7 @@ def addCity(analyzer,city):
     else:
         lista = m.get(analyzer['ciudades'],cityname)['value']
         lt.addLast(lista,city)
-    for city in lt.iterator(m.get(analyzer['ciudades'],cityname)['value']):
-        updateLongitudeIndexCiudad(analyzer['ciudadesLng'], city)
-
+    
 
 def addConnection(analyzer, origin, destination, distance):
     """
@@ -153,89 +147,6 @@ def addDataAirport(analyzer,airport):
     iata = airport['IATA']
     m.put(analyzer['aeropuerto'],iata,airport)
     updateLongitudeIndexAero(analyzer['aeropuertoLng'], airport)
-
-
-
-def updateLongitudeIndexCiudad(map, ciudad):
-    """
-    Se toma la longitud de la ciudad y se busca si ya existe en el arbol
-    dicha longitud.  Si es asi, se adiciona a su lista de avistamientos.
-    Si no se encuentra creado un nodo para esa longitud en el arbol
-    se crea uno
-    """
-    longitude = float(ciudad['lng'])
-    entry = om.get(map, longitude)
-    if entry is None:
-        datentry = newLongitudeEntryCiudad(longitude)
-        om.put(map, longitude, datentry)
-    else:
-        datentry = me.getValue(entry)
-    addLongitudeIndexCiudad(datentry, ciudad)
-    return map
-
-def updateLatitudeIndexCiudad(map, ciudad):
-    """
-    Se toma la latitud del avistamiento y se busca si ya existe en el arbol
-    dicha latitud.  Si es asi, se adiciona a su lista de avistamientos.
-    Si no se encuentra creado un nodo para esa latitud en el arbol
-    se crea uno
-    """
-    latitude = float(ciudad['lat'])
-    entry = om.get(map, latitude)
-    if entry is None:
-        datentry = newLatitudeEntryCiudad(latitude)
-        om.put(map, latitude, datentry)
-    else:
-        datentry = me.getValue(entry)
-    addLatitudeIndexCiudad(datentry, ciudad)
-    return map
-
-
-def addLongitudeIndexCiudad(datentry, avistamiento):
-    """
-    Actualiza un indice.  Este indice tiene una lista
-    de avistamientos y una tabla de hash cuya llave es la longitud y
-    el valor es un mapa con la latitud como llave y valor los avistamientos de
-    la longitud que se está consultando (dada por el nodo del arbol)
-    """
-    updateLatitudeIndexCiudad(datentry['latitudeIndex'], avistamiento)
-    return datentry
-
-
-def addLatitudeIndexCiudad(datentry, avistamiento):
-    """
-    Actualiza un indice.  Este indice tiene una lista
-    de avistamientos y una tabla de hash cuya llave es la latitud y
-    el valor es una lista con los avistamientos de dicho tipo en la latitud que
-    se está consultando (dada por el nodo del arbol)
-    """
-    lst = datentry['lstCities']
-    lt.addLast(lst, avistamiento)
-    return datentry
-
-def newLongitudeEntryCiudad(longitude):
-    """
-    Crea una entrada en el indice por ciudad, es decir en el arbol
-    binario.
-    """
-    longitudentry = {'longitude': None, 'latitudeIndex': None}
-    longitudentry['longitude'] = longitude
-    longitudentry['latitudeIndex'] = om.newMap(omaptype='RBT',
-                                      comparefunction=compareLatitude)
-    return longitudentry
-
-
-def newLatitudeEntryCiudad(latitude):
-    """
-    Crea una entrada en el indice por ciudad, es decir en el arbol
-    binario.
-    """
-    latitudentry = {'latitude': None, 'lstCities': None}
-    latitudentry['latitude'] = latitude
-    latitudentry['lstCities'] = lt.newList('SINGLE_LINKED', compareLongitude)
-    return latitudentry
-
-
 
 
 
@@ -504,76 +415,6 @@ def cityToairport(analyzer,ciudad):
 
 
 
-
-
-def airportTocity(analyzer,aeropuerto):
-    """
-    asocia ciudad mas cercana a un aeropuerto dado 
-    en primer lugar, hace una lista de las ciudades a menos de 10km del aeropuerto, sino encuentra ninguna
-    aumenta el radio de busqueda a 20km y seguira aumentando el radio de busqueda hasta encontrar alguna ciudad
-    si en la región de busqueda hay mas de una ciudad se selecciona la ciudad mas cercana al aeropuerto 
-    """
-    aerodata = aeropuerto
-    aerolat = float(aerodata['Latitude'])
-    aerolon = float(aerodata['Longitude'])
-    lista = lt.newList()
-    km = 10
-    while lt.size(lista) == 0:
-        area = areabusqueda(aerolat,aerolon,km) 
-        rangoLong = om.values(analyzer["ciudadesLng"],area[2],area[3])
-        if lt.size(rangoLong) > 0:
-            for long in lt.iterator(rangoLong):
-                rangoLat = om.values(long["latitudeIndex"],area[0],area[1])
-                for lat in lt.iterator(rangoLat):
-                    for ciudad in lt.iterator(lat["lstCities"]):
-                        lt.addLast(lista,ciudad)
-        km += 10 
-
-    if lt.size(lista) == 1:
-        return lt.getElement(lista,1)
-    else:
-        min = km 
-        ciudadCercana = None
-        for city in lt.iterator(lista):
-            if dist(aerolat, float(city['lat']), aerolon, float(city['lng'])) < min:
-                min = dist(aerolat, float(city['lat']), aerolon, float(city['lng']))
-                ciudadCercana = city
-        return ciudadCercana
-
-
-def cityToairport(analyzer,ciudad):
-    """
-    asocia aeropuerto mas cercano a una ciudad dada 
-    en primer lugar, hace una lista de los aeropuertos a menos de 10km de la ciudad, sino encuentra ninguno
-    aumenta el radio de busqueda a 20km y seguira aumentando el radio de busqueda haata encontrar algun aeropuerto
-    si en la región de busqueda hay mas de un aeropuerto se selecciona el aeropuerto mas cercano a la ciudad 
-    """
-    citydata = ciudad 
-    citylat = float(citydata['lat'])
-    citylon = float(citydata['lng'])
-    lista = lt.newList()
-    km = 10
-    while lt.size(lista) == 0:
-        area = areabusqueda(citylat,citylon,km) 
-        for iata in lt.iterator(gr.vertices(analyzer['rutas'])):
-          aero = m.get(analyzer['aeropuerto'],iata)['value']
-          aeroLat = float(aero['Latitude'])
-          aeroLon = float(aero['Longitude'])
-          if area[0] <= aeroLat and area[1] >= aeroLat:
-              if area[2] <= aeroLon and area[3] >= aeroLon:
-                  lt.addLast(lista,aero)
-        km += 10 
-
-    if lt.size(lista) == 1:
-        return lt.getElement(lista,1)
-    else:
-        min = km 
-        aeropuerto = None
-        for aero in lt.iterator(lista):
-            if dist(citylat, float(aero['Latitude']), citylon, float(aero['Longitude'])) < min:
-                min = dist(citylat, float(aero['Latitude']), citylon, float(aero['Longitude']))
-                aeropuerto = aero
-        return aeropuerto 
 
 def rutasMin(grafo,vertice):
     return djk.Dijkstra(grafo,vertice)
