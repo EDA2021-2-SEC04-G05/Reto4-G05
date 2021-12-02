@@ -121,7 +121,8 @@ def addCity(analyzer,city):
     else:
         lista = m.get(analyzer['ciudades'],cityname)['value']
         lt.addLast(lista,city)
-    updateLongitudeIndexCiudad(analyzer['ciudadesLng'], city)
+    for city in lt.iterator(m.get(analyzer['ciudades'],cityname)['value']):
+        updateLongitudeIndexCiudad(analyzer['ciudadesLng'], city)
 
 
 def addConnection(analyzer, origin, destination, distance):
@@ -423,13 +424,11 @@ def usarMillas(analyzer, ciudad, millas):
         lt.addLast(visitadas, aero)
         aeropuerto = aero
         recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
+    
     ciudades = lt.newList(datastructure='ARRAY_LIST')
     for i in lt.iterator(visitadas):
-        aero = me.getValue(m.get(analyzer['aeropuerto'],i))
-        ciudad = airportTocity(analyzer, aero)
-        if ciudad:
-            ciudad = ciudad
-            lt.addLast(ciudades,ciudad)
+        ciudad = me.getValue(m.get(analyzer['aeropuerto'],i))["City"]
+        lt.addLast(ciudades,ciudad)
         
     return numNodos, costoTotal, ciudades
     

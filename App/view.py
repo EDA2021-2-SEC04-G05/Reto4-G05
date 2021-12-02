@@ -102,7 +102,7 @@ def printMillas(result):
     y = PrettyTable()
     y.field_names = ['Ciudades']
     for ciudad in controller.iterador(result[2]):
-        renglon = [salto(str(ciudad["city"]),18)]
+        renglon = [salto(str(ciudad),18)]
         y.add_row(renglon)
     print(y)
 
