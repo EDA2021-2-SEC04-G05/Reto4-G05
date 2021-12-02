@@ -101,7 +101,7 @@ def printMillas(result):
     print("Se recomiendan visitar las siguientes ciudades de acuerdo a la cantidad de millas:")
     y = PrettyTable()
     y.field_names = ['Ciudades']
-    for ciudad in controller.iterador(result[3]):
+    for ciudad in controller.iterador(result[2]):
         renglon = [salto(str(ciudad["city"]),18)]
         y.add_row(renglon)
     print(y)
@@ -216,9 +216,35 @@ def thread_cycle():
 
 
         elif int(inputs[0]) == 4:
-            ciudad = input('Ingrese la ciudad de origen (código ascii) : ')
+            ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+            lciudades1 = controller.mget(cont['ciudades'],ciudadinicial)
+            while lciudades1 == None:
+                print('No se encontro la ciudad,verifique que esta bien escrito el nombre')
+                ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+                lciudades1  = controller.mget(cont['ciudades'],ciudadinicial)
+            if controller.ltsize(lciudades1['value']) == 1:
+                print('Se encontro una coincidencia entre el nombre de las ciudades')
+                citydatai = controller.ltgetElement(lciudades1['value'],1)
+                x = PrettyTable()
+                x.field_names = ['Ciudad','Pais','Latitud','Longitud']
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    x.add_row(renglon)
+                print(x)
+            else:
+                print('Se encontraron ' + str(controller.ltsize(lciudades1['value'])) + ' coincidencias para la ciudad dada: ')
+                x = PrettyTable()
+                x.field_names = ['Opción','Ciudad','Pais','Latitud','Longitud']
+                pos = 1 
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [str(pos),salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    pos += 1 
+                    x.add_row(renglon)
+                print(x)
+                selec = int(input('Ingrese la opción correspondiente a la ciudad: '))
+                citydatai = controller.ltgetElement(lciudades1['value'],selec)
             millas = int(input('Ingrese la cantidad de millas que tiene disponibles: '))
-            result = controller.usarMillas(cont, ciudad, millas)
+            result = controller.usarMillas(cont, citydatai, millas)
             print("Red de expansión mínima: ")
             printMillas(result)
         

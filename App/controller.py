@@ -111,3 +111,18 @@ def servicioWebExterno(cont, ciudadinicial, ciudadfinal):
 # Funciones para enmascarar
 def iterador(lst):
     return model.iterador(lst)
+
+def mget(map,llave):
+    return model.mget(map,llave)
+
+def ltsize(lista):
+    return model.ltsize(lista)
+
+def ltgetElement(lista,pos):
+    return model.ltgetElement(lista,pos)
+
+def ltnewList():
+    return model.ltnewList()
+
+def ltAddLast(lista,elem):
+    return model.ltAddLast(lista,elem)
