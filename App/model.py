@@ -348,8 +348,6 @@ def maxinterconexion(analyzer):
             lt.addLast(lstiata,dataairport)
     return (max,lstiata)
 
-
-
 def encontrarClusteres(analyzer,aeroI,aeroF):
     """
     Req 2
@@ -543,6 +541,45 @@ def airportTocity(analyzer,aeropuerto):
         return ciudadCercana
 
 
+def cityToairport(analyzer,ciudad):
+    """
+    asocia aeropuerto mas cercano a una ciudad dada 
+    en primer lugar, hace una lista de los aeropuertos a menos de 10km de la ciudad, sino encuentra ninguno
+    aumenta el radio de busqueda a 20km y seguira aumentando el radio de busqueda haata encontrar algun aeropuerto
+    si en la región de busqueda hay mas de un aeropuerto se selecciona el aeropuerto mas cercano a la ciudad 
+    """
+    citydata = ciudad 
+    citylat = float(citydata['lat'])
+    citylon = float(citydata['lng'])
+    lista = lt.newList()
+    km = 10
+    while lt.size(lista) == 0:
+        area = areabusqueda(citylat,citylon,km) 
+        for iata in lt.iterator(gr.vertices(analyzer['rutas'])):
+          aero = m.get(analyzer['aeropuerto'],iata)['value']
+          aeroLat = float(aero['Latitude'])
+          aeroLon = float(aero['Longitude'])
+          if area[0] <= aeroLat and area[1] >= aeroLat:
+              if area[2] <= aeroLon and area[3] >= aeroLon:
+                  lt.addLast(lista,aero)
+        km += 10 
+
+    if lt.size(lista) == 1:
+        return lt.getElement(lista,1)
+    else:
+        min = km 
+        aeropuerto = None
+        for aero in lt.iterator(lista):
+            if dist(citylat, float(aero['Latitude']), citylon, float(aero['Longitude'])) < min:
+                min = dist(citylat, float(aero['Latitude']), citylon, float(aero['Longitude']))
+                aeropuerto = aero
+        return aeropuerto 
+
+def rutasMin(grafo,vertice):
+    return djk.Dijkstra(grafo,vertice)
+
+def camino(paths,vertice):
+    return djk.pathTo(paths,vertice)
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 
@@ -607,11 +644,10 @@ def areabusqueda(lat,lon,radio):
     angulo = radianes * 180/pi
     lat_min = lat - angulo 
     lat_max = lat + angulo
-    lon_min = (lon - angulo) / cos(lat *(pi/180))
-    lon_max = (lon + angulo) / cos(lat *(pi/180))
-    
-    return [lat_min,lat_max,lon_min,lon_max]
+    lon_min = lon - angulo / cos(lat *(pi/180))
+    lon_max = lon + angulo / cos(lat *(pi/180))
 
+    return [lat_min,lat_max,lon_min,lon_max]
 
 def dist(lat1,lat2,lon1,lon2):
     """
