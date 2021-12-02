@@ -24,6 +24,7 @@ import sys
 import config
 import threading
 import folium
+import json
 from flask import Flask
 from App import controller
 from DISClib.ADT import stack
@@ -85,6 +86,24 @@ def printClusteres(result):
     renglon = [salto(str(result[0]),18),salto(str(result[1]),18)]
     x.add_row(renglon)
     print(x)
+
+
+
+def printMillas(result):
+    x = PrettyTable()
+    x.field_names = ['Numero de nodos', "Costo total [km]"]
+    renglon = [salto(str(result[0]),18),salto(str(round(result[1],2)),18)]
+    x.add_row(renglon)
+    print(x)
+    print("Se recomiendan visitar las siguientes ciudades de acuerdo a la cantidad de millas:")
+    y = PrettyTable()
+    y.field_names = ['Ciudades']
+    for ciudad in controller.iterator(result[3]):
+        renglon = [salto(str(ciudad["city"]),18)]
+        y.add_row(renglon)
+    print(y)
+
+
 
 def printmap(listaaero):
 
@@ -226,6 +245,8 @@ def thread_cycle():
             print('El total de vertices cargados es: ' + str(carga[1]))
             print('El número de rutas cargadas es: ' + str(carga[2]))
             print('El número de ciudades cargadas es: ' + str(carga[3]))
+            print('El total de vertices cargados es: ' + str(carga[4]))
+            print('El número de rutas cargadas es: ' + str(carga[5]))
 
         elif int(inputs[0]) == 1:
             print('Determinando aeropuerto asociado a mayor número de rutas... ')
@@ -237,17 +258,19 @@ def thread_cycle():
 
 
         elif int(inputs[0]) == 2:
+            aeropuertoinicial = input('Ingrese el primer aeropuerto (código IATA) : ').upper()
+            aeropuertofinal = input('Ingrese el segundo aeropuerto (código IATA) : ').upper()
             print("Encontrando clústeres de tráfico aéreo... ")
-            aeropuertoinicial = input('Ingrese el aeropuerto de origen (código IATA) : ')
-            aeropuertofinal = input('Ingrese el aeropuerto de destino (código IATA) : ')
             result = controller.encontrarClusteres(cont,aeropuertoinicial,aeropuertofinal)
             printClusteres(result)
             print("Número total de clústeres presentes en la red de transporte aéreo: " + str(result[0]))
-            if result[1]:
+            if result[1] == True:
                 valor = " sí"
             else:
-                valor = "no"
+                valor = " no"
             print("El aeropuerto ", aeropuertoinicial," y ", aeropuertofinal, valor," están en el mismo clúster aereo.")
+            print('Para visualizar el mapa con las observaciones siga el enlace que se genera a continuación: ')
+            printmap(result[2])
             
         elif int(inputs[0]) == 3:
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
@@ -334,6 +357,20 @@ def thread_cycle():
             else:
                 print('No hay camino')
 
+
+
+        elif int(inputs[0]) == 4:
+            ciudad = input('Ingrese la ciudad de origen (código ascii) : ')
+            millas = int(input('Ingrese la cantidad de millas que tiene disponibles: '))
+            result = controller.usarMillas(cont, ciudad, millas)
+            print("Red de expansión mínima: ")
+            printMillas(result)
+        
+
+
+
+
+
         else:
             sys.exit(0)
     sys.exit(0)
@@ -341,6 +378,7 @@ def thread_cycle():
 
 
 if __name__ == "__main__":
+    ruta = "Data/AirportNearestRelevant_v1_Version_1.0_swagger_specification.json"
     threading.stack_size(67108864)  # 64MB stack
     sys.setrecursionlimit(2 ** 20)
     thread = threading.Thread(target=thread_cycle)

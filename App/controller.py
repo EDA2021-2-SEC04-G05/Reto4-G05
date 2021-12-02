@@ -104,6 +104,11 @@ def rutasMin(grafo,vertice):
 def camino(paths,vertice):
     return model.camino(paths,vertice)
 
+
+
+def usarMillas(cont, ciudad, millas):
+    return model.usarMillas(cont, ciudad, millas)
+
 # Funciones para enmascarar
 def iterador(lst):
     return model.iterador(lst)
