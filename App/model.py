@@ -444,3 +444,13 @@ def ltAddLast(lista,elem):
     
     return [lat_min,lat_max,lon_min,lon_max]
 
+def concatlist(lst1,lst2):
+    """
+    Recibe dos listas, agrega los elementos de la segunda lista al final de la primera y retorna dicha lista 
+    """
+    for elem in lt.iterator(lst2):
+        lt.addLast(lst1,elem)
+    return lst1
+
+def sublista(lista,posi,long):
+    return lt.subList(lista,posi,long)

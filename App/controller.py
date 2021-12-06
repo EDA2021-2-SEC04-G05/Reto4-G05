@@ -136,3 +136,9 @@ def ltnewList():
 
 def ltAddLast(lista,elem):
     return model.ltAddLast(lista,elem)
+
+def sublista(lista,posi,long):
+    return model.sublista(lista,posi,long)
+
+def concatlist(lst1,lst2):
+    return model.concatlist(lst1,lst2)
