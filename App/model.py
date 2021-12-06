@@ -27,7 +27,7 @@
 
 import requests
 from requests.api import request
-from requests.models import LocationParseError
+from requests.models import LocationParseError, stream_decode_response_unicode
 import config
 import folium
 import json
@@ -65,7 +65,13 @@ def newAnalyzer():
                     'paths': None,
                     'ciudades': None,
                     'red': None,
+                    'IATA': None,
+                    'id': None
                     }
+
+        analyzer['IATA'] = lt.newList()
+
+        analyzer['id'] = lt.newList()
 
         analyzer['aeropuerto'] = m.newMap(numelements=14000,
                                      maptype='PROBING',
@@ -111,6 +117,8 @@ def addCity(analyzer,city):
     else:
         lista = m.get(analyzer['ciudades'],cityname)['value']
         lt.addLast(lista,city)
+    cityid = city['id']
+    lt.addLast(analyzer['id'],cityid)
 
 def addConnection(analyzer, origin, destination, distance):
     """
@@ -130,6 +138,7 @@ def addStop(analyzer, stopid):
     try:
         if not gr.containsVertex(analyzer['rutas'], stopid):
             gr.insertVertex(analyzer['rutas'], stopid)
+            lt.addLast(analyzer['IATA'],stopid) 
         if not gr.containsVertex(analyzer['rutasNoDirigido'], stopid):
             gr.insertVertex(analyzer['rutasNoDirigido'], stopid)
         return analyzer
@@ -139,6 +148,7 @@ def addStop(analyzer, stopid):
 def addDataAirport(analyzer,airport):
     iata = airport['IATA']
     m.put(analyzer['aeropuerto'],iata,airport)
+    #lt.addLast(analyzer['IATA'],iata) 
 
 # Funciones para creacion de datos
 
@@ -147,11 +157,22 @@ def prueba(analyzer):
     numeroAirport = m.size(analyzer['aeropuerto'])
     numeroVertices = gr.numVertices(analyzer['rutas'])
     numeroLados = gr.numEdges(analyzer['rutas'])
-    numeroCiudades = m.size(analyzer['ciudades'])
+    numeroCiudades = lt.size(analyzer['id'])
     numeroVertices2 = gr.numVertices(analyzer['rutasNoDirigido'])
     numeroLados2 = gr.numEdges(analyzer['rutasNoDirigido'])
-
-    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades,numeroVertices2,numeroLados2]
+    iata = lt.getElement(analyzer['IATA'],1)
+    iata2 = lt.getElement(analyzer['IATA'],numeroVertices)
+    id = lt.getElement(analyzer['id'],1)
+    id2 = lt.getElement(analyzer['id'],numeroCiudades)
+    datosaero = m.get(analyzer['aeropuerto'],iata)['value']
+    datosaero2 = m.get(analyzer['aeropuerto'],iata2)['value']
+    for city in lt.iterator(m.valueSet(analyzer['ciudades'])): 
+        for data in lt.iterator(city):
+            if data['id'] == id:
+                datoscity = data
+            if data['id'] == id2:
+                datoscity2 = data
+    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades,numeroVertices2,numeroLados2,datosaero,datosaero2,datoscity,datoscity2]
 
 def maxinterconexion(analyzer):
     lista = gr.vertices(analyzer['rutas'])
@@ -346,6 +367,9 @@ def rutasMin(grafo,vertice):
 
 def camino(paths,vertice):
     return djk.pathTo(paths,vertice)
+
+def adyacencia(analyzer,iata):
+    return gr.adjacents(analyzer['rutas'],iata)
 
 # Funciones utilizadas para comparar elementos dentro de una lista
 

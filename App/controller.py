@@ -114,6 +114,9 @@ def usarMillas(cont, ciudad, millas):
 def servicioWebExterno(cont, ciudadinicial, ciudadfinal):
     return model.servicioWebExterno(cont, ciudadinicial, ciudadfinal)
 
+def adyacencia(analyzer,iata):
+    return model.adyacencia(analyzer,iata)
+
 
 # Funciones para enmascarar
 def iterador(lst):

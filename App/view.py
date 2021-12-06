@@ -228,7 +228,8 @@ def printmap2(listaaero):
     if __name__ == '__main__':
         app.run() 
 
-
+def rd(a):
+    return str(round(float(a),4))
 
 """
 Menu principal
@@ -243,11 +244,25 @@ def thread_cycle():
             controller.loadServices(cont, routefile,airportfile,cityfile)
             carga = prueba(cont)
             print('El total de aeropuertos cargados es: ' + str(carga[0]))
-            print('El total de vertices cargados es: ' + str(carga[1]))
-            print('El número de rutas cargadas es: ' + str(carga[2]))
+            print('El total de vertices cargados en el grafo dirigido es: ' + str(carga[1]))
+            print('El número de rutas cargadas en el grafo dirigido es: ' + str(carga[2]))
+            print('El primer y el último aeropuerto cargado al grafo dirigido es: ')
+            x = PrettyTable()
+            x.field_names = ['Nombre','Ciudad','Pais','IATA','Latitud','Longitud']
+            x.add_row([salto(carga[6]['Name'],15),carga[6]['City'],carga[6]['Country'],carga[6]['IATA'],rd(carga[6]['Latitude']),rd(carga[6]['Longitude'])])
+            x.add_row([salto(carga[7]['Name'],15),carga[7]['City'],carga[7]['Country'],carga[7]['IATA'],rd(carga[7]['Latitude']),rd(carga[7]['Longitude'])])
+            print(x)
+            print('El total de vertices cargados en el grafo no dirigido es: ' + str(carga[4]))
+            print('El número de rutas cargadas en el grafo no dirigido es: ' + str(carga[5]))
+            print('El primer aeropuerto y el último cargado al grafo dirigido es: ')
+            print(x) 
             print('El número de ciudades cargadas es: ' + str(carga[3]))
-            print('El total de vertices cargados es: ' + str(carga[4]))
-            print('El número de rutas cargadas es: ' + str(carga[5]))
+            print('La primera y última ciudad cargada es: ') 
+            y = PrettyTable()
+            y.field_names = ['Nombre','Pais','Población','Latitud','Longitud']
+            y.add_row([salto(carga[8]['city_ascii'],15),carga[8]['country'],carga[8]['population'],rd(carga[8]['lat']),rd(carga[8]['lng'])])
+            y.add_row([salto(carga[9]['city_ascii'],15),carga[9]['country'],carga[9]['population'],rd(carga[9]['lat']),rd(carga[9]['lng'])])
+            print(y)
 
         elif int(inputs[0]) == 1:
             print('Determinando aeropuerto asociado a mayor número de rutas... ')
@@ -366,6 +381,20 @@ def thread_cycle():
             print("Red de expansión mínima: ")
             printMillas(result)
         
+        elif int(inputs[0]) == 5:
+            iata = input('Ingrese el código IATA del aeropuerto: ')
+            listav = controller.adyacencia(cont,iata)
+            aerodata = controller.mget(cont['aeropuerto'],iata)['value']
+            print('Analizando los aeropuertos afectados si se cierra el aeropuerto... ' + aerodata['Name'])
+            print('El número de aeropuertos afectados es: ' + controller.ltsize(listav))
+            x = PrettyTable()
+            x.field_names = ['Nombre','Ciudad','Pais']
+            for vertice in controller.iterador(listav):
+                data = controller.mget(cont['aeropuerto'],vertice)['value']
+                renglon = [data['Name'],data['City'],data['Country']]
+                x.add_row(renglon)
+            x.sortby = 'Nombre'
+            print(x)
 
 
         elif int(inputs[0]) == 6:
