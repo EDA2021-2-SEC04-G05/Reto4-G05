@@ -401,12 +401,86 @@ def thread_cycle():
 
 
         elif int(inputs[0]) == 6:
-            
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+            lciudades1 = controller.mget(cont['ciudades'],ciudadinicial)
+            while lciudades1 == None:
+                print('No se encontro la ciudad,verifique que esta bien escrito el nombre')
+                ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
+                lciudades1  = controller.mget(cont['ciudades'],ciudadinicial)
+            if controller.ltsize(lciudades1['value']) == 1:
+                print('Se encontro una coincidencia entre el nombre de las ciudades')
+                citydatai = controller.ltgetElement(lciudades1['value'],1)
+                x = PrettyTable()
+                x.field_names = ['Ciudad','Pais','Latitud','Longitud']
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    x.add_row(renglon)
+                print(x)
+            else:
+                print('Se encontraron ' + str(controller.ltsize(lciudades1['value'])) + ' coincidencias para la ciudad dada: ')
+                x = PrettyTable()
+                x.field_names = ['Opción','Ciudad','Pais','Latitud','Longitud']
+                pos = 1 
+                for ciudad in controller.iterador(lciudades1['value']):
+                    renglon = [str(pos),salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    pos += 1 
+                    x.add_row(renglon)
+                print(x)
+                selec = int(input('Ingrese la opción correspondiente a la ciudad: '))
+                citydatai = controller.ltgetElement(lciudades1['value'],selec)
+                
             ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
+            lciudades2 = controller.mget(cont['ciudades'],ciudadfinal)
+            while lciudades2 == None:
+                print('No se encontro la ciudad,verifique que esta bien escrito el nombre')
+                ciudadfinal= input('Ingrese la ciudad de destino (código ascii) : ')
+                lciudades2  = controller.mget(cont['ciudades'],ciudadfinal)
+            if controller.ltsize(lciudades2['value']) == 1:
+                print('Se encontro una coincidencia entre el nombre de las ciudades')
+                citydataf = controller.ltgetElement(lciudades2['value'],1)
+                x = PrettyTable()
+                x.field_names = ['Ciudad','Pais','Latitud','Longitud']
+                for ciudad in controller.iterador(lciudades2['value']):
+                    renglon = [salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    x.add_row(renglon)
+                print(x)
+            else:
+                print('Se encontraron ' + str(controller.ltsize(lciudades2['value'])) + ' coincidencias para la ciudad dada: ')
+                x = PrettyTable()
+                x.field_names = ['Opción','Ciudad','Pais','Latitud','Longitud']
+                pos = 1 
+                for ciudad in controller.iterador(lciudades2['value']):
+                    renglon = [str(pos),salto(ciudad['city_ascii'],18),salto(ciudad['country'],18),salto(ciudad['lat'],18),salto(ciudad['lng'],18)]
+                    pos += 1 
+                    x.add_row(renglon)
+                print(x)
+                selec = int(input('Ingrese la opción correspondiente a la ciudad: '))
+                citydataf = controller.ltgetElement(lciudades2['value'],selec)
+             
+            result = controller.servicioWebExterno(cont, citydatai, citydataf)
             
-            result = controller.servicioWebExterno("cont", ciudadinicial, ciudadfinal)
-
+            
+            camino = result[0]
+            if camino is not None: 
+                x = PrettyTable()
+                x.field_names = ['Aeropuerto de salida','Aeropuerto de llegada','Distancia en km ']
+                pathlen = stack.size(camino)
+                print('El camino es de longitud: ' + str(pathlen))
+                lista = controller.ltnewList() 
+                conteo = 0 
+                while (not stack.isEmpty(camino)):
+                    stop = stack.pop(camino)
+                    aeropuertoS = controller.mget(cont['aeropuerto'],stop['vertexA'])['value']
+                    aeropuertoD = controller.mget(cont['aeropuerto'],stop['vertexB'])['value']
+                    distancia = stop['weight']
+                    x.add_row([aeropuertoS['Name'],aeropuertoD['Name'],distancia])
+                    if conteo == 0:
+                        controller.ltAddLast(lista,aeropuertoS) 
+                    conteo +=1 
+                    controller.ltAddLast(lista,aeropuertoD)
+                print(x)
+            
+            print("Distancia total de la ruta: ", result[1])
 
 
         else:

@@ -64,6 +64,7 @@ def newAnalyzer():
                     'rutas': None,
                     'components': None,
                     'paths': None,
+                    'pathsAPI': None,
                     'ciudades': None,
                     'red': None,
                     'aeropuertoLng': None
@@ -367,30 +368,32 @@ def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
     """
     Req 6
     """
-    aeropuertos = json.dumps("AirportNearestRelevant_v1_Version_1.0_swagger_specification.json")
-    print(aeropuertos)
+    latI = str(ciudadinicial["lat"])
+    lngI = str(ciudadinicial["lng"])
+    latF = str(ciudadfinal["lat"])
+    lngF = str(ciudadfinal["lng"])
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
     h = {'content-type':  "application/x-www-form-urlencoded"}
     datos = "grant_type=client_credentials&client_id=iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l&client_secret=ZuKeobzwsVU6Es7g"
     response = requests.post(url, data=datos, headers= h)
     response_dict = json.loads(response.text)
     token = response_dict["access_token"]
-    print(token)
-    url = "https://test.api.amadeus.com/v2/reference-data/urls/checkin-links?airline=IB"
-    print(url)
-    h = {'Authorization':  "Bearer "+token}
-    response2 = requests.get(url, headers= h, json=aeropuertos)
-    print(response2)
-    print(response2.content)
-    """
-    latF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lat"])
-    lngF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lng"])
-    latI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lat"])
-    lngI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lng"])
+    hToken = {'Authorization':  "Bearer "+token}
+    urlCityInicial = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latI+"&longitude="+lngI
+    responseInicial = requests.get(urlCityInicial, headers= hToken)
+    response_dictInicial = json.loads(responseInicial.text)
+    aeroInicial = response_dictInicial["data"][0]
+
+    urlCityFinal = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latF+"&longitude="+lngF
+    responseFinal = requests.get(urlCityFinal, headers= hToken)
+    response_dictFinal = json.loads(responseFinal.text)
+    aeroFinal = response_dictFinal["data"][0]  
     
-    amadeus.reference_data.locations.airports.get(longitude=, latitude=) 
-    """
-    pass
+    analyzer["pathsAPI"] = djk.Dijkstra(analyzer["rutas"],aeroInicial["iataCode"])
+    camino = djk.pathTo(analyzer["pathsAPI"], aeroFinal["iataCode"])
+    distancia = djk.distTo(analyzer["pathsAPI"], aeroFinal["iataCode"])
+    distancia = round((distancia + aeroInicial['distance']['value'] + aeroFinal['distance']['value']),2)
+    return camino, distancia
 
   
 
