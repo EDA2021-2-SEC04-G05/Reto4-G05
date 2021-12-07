@@ -34,6 +34,7 @@ import json
 from math import cos,pi,sin,asin,sqrt
 from DISClib.ADT.graph import gr
 from DISClib.ADT import map as m
+from DISClib.ADT import orderedmap as om
 from DISClib.DataStructures import mapentry as me
 from DISClib.ADT import list as lt
 from DISClib.Algorithms.Graphs import scc
@@ -66,7 +67,8 @@ def newAnalyzer():
                     'ciudades': None,
                     'red': None,
                     'IATA': None,
-                    'id': None
+                    'id': None,
+                    'aeropuertoLng': None
                     }
 
         analyzer['IATA'] = lt.newList()
@@ -90,6 +92,9 @@ def newAnalyzer():
                                               directed=False,
                                               size=14000,
                                               comparefunction=compareIATA)
+
+        analyzer['aeropuertoLng'] = om.newMap(omaptype='RBT',
+                                      comparefunction=compareLongitude)
         return analyzer
     except Exception as exp:
         error.reraise(exp, 'model:newAnalyzer')
@@ -100,6 +105,7 @@ def addAirport(analyzer, route):
     llegada = route['Destination']
     addStop(analyzer,salida)
     addStop(analyzer,llegada)
+    
 
 def addRoute(analyzer,route):
     salida = route['Departure']
@@ -119,6 +125,7 @@ def addCity(analyzer,city):
         lt.addLast(lista,city)
     cityid = city['id']
     lt.addLast(analyzer['id'],cityid)
+    
 
 def addConnection(analyzer, origin, destination, distance):
     """
@@ -149,6 +156,90 @@ def addDataAirport(analyzer,airport):
     iata = airport['IATA']
     m.put(analyzer['aeropuerto'],iata,airport)
     #lt.addLast(analyzer['IATA'],iata) 
+    updateLongitudeIndexAero(analyzer['aeropuertoLng'], airport)
+
+
+
+def updateLongitudeIndexAero(map, aero):
+    """
+    Se toma la longitud del aeropuerto y se busca si ya existe en el arbol
+    dicha longitud.  Si es asi, se adiciona a su lista de avistamientos.
+    Si no se encuentra creado un nodo para esa longitud en el arbol
+    se crea uno
+    """
+    longitude = float(aero['Longitude'])
+    entry = om.get(map, longitude)
+    if entry is None:
+        datentry = newLongitudeEntryAero(longitude)
+        om.put(map, longitude, datentry)
+    else:
+        datentry = me.getValue(entry)
+    addLongitudeIndexAero(datentry, aero)
+    return map
+
+def updateLatitudeIndexAero(map, aero):
+    """
+    Se toma la latitud del avistamiento y se busca si ya existe en el arbol
+    dicha latitud.  Si es asi, se adiciona a su lista de avistamientos.
+    Si no se encuentra creado un nodo para esa latitud en el arbol
+    se crea uno
+    """
+    latitude = float(aero['Latitude'])
+    entry = om.get(map, latitude)
+    if entry is None:
+        datentry = newLatitudeEntryAero(latitude)
+        om.put(map, latitude, datentry)
+    else:
+        datentry = me.getValue(entry)
+    addLatitudeIndexAero(datentry, aero)
+    return map
+
+
+def addLongitudeIndexAero(datentry, avistamiento):
+    """
+    Actualiza un indice.  Este indice tiene una lista
+    de avistamientos y una tabla de hash cuya llave es la longitud y
+    el valor es un mapa con la latitud como llave y valor los avistamientos de
+    la longitud que se está consultando (dada por el nodo del arbol)
+    """
+    updateLatitudeIndexAero(datentry['latitudeIndex'], avistamiento)
+    return datentry
+
+
+def addLatitudeIndexAero(datentry, avistamiento):
+    """
+    Actualiza un indice.  Este indice tiene una lista
+    de avistamientos y una tabla de hash cuya llave es la latitud y
+    el valor es una lista con los avistamientos de dicho tipo en la latitud que
+    se está consultando (dada por el nodo del arbol)
+    """
+    lst = datentry['lstAeros']
+    lt.addLast(lst, avistamiento)
+    return datentry
+
+def newLongitudeEntryAero(longitude):
+    """
+    Crea una entrada en el indice por aeropuerto, es decir en el arbol
+    binario.
+    """
+    longitudentry = {'longitude': None, 'latitudeIndex': None}
+    longitudentry['longitude'] = longitude
+    longitudentry['latitudeIndex'] = om.newMap(omaptype='RBT',
+                                      comparefunction=compareLatitude)
+    return longitudentry
+
+
+def newLatitudeEntryAero(latitude):
+    """
+    Crea una entrada en el indice por ciudad, es decir en el arbol
+    binario.
+    """
+    latitudentry = {'latitude': None, 'lstAeros': None}
+    latitudentry['latitude'] = latitude
+    latitudentry['lstAeros'] = lt.newList('SINGLE_LINKED', compareLongitude)
+    return latitudentry
+
+
 
 # Funciones para creacion de datos
 
@@ -250,7 +341,7 @@ def usarMillas(analyzer, ciudad, millas):
     Req 4
     """
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
-    aeropuerto = cityToairport(analyzer,ciudad)
+    aeropuerto = cityToairport(analyzer,ciudad)['IATA']
     distancia = millas/3.2
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     numNodos = m.size(analyzer["red"]['distTo'])
@@ -263,6 +354,7 @@ def usarMillas(analyzer, ciudad, millas):
         lt.addLast(visitadas, aero)
         aeropuerto = aero
         recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
+    
     ciudades = lt.newList(datastructure='ARRAY_LIST')
     for i in range (1,4):
         aero = lt.getElement(visitadas,i)
@@ -273,6 +365,8 @@ def usarMillas(analyzer, ciudad, millas):
     for i in lt.iterator(ciudades):
         aero = lt.getElement(visitadas,i)
         #ciudad = airportTocity(analyzer, aero)
+    for i in lt.iterator(visitadas):
+        ciudad = me.getValue(m.get(analyzer['aeropuerto'],i))["City"]
         lt.addLast(ciudades,ciudad)
         
     return numNodos, costoTotal, ciudades
@@ -309,22 +403,8 @@ def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
 
   
 
-"""
-
-    "type": "amadeusOAuth2Token",
-    "username": "s.forerog2@uniandes.edu.co",
-    "application_name": "Reto 4",
-    "client_id": "iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l",
-    "token_type": "Bearer",
-    "access_token": "mdd3fVwDsPVahTkdulBmh9Y7HjSt",
-    "expires_in": 1799,
-    "state": "approved",
-    "scope": ""
-
-"""
  
     
-
 
 
 
@@ -335,20 +415,20 @@ def cityToairport(analyzer,ciudad):
     aumenta el radio de busqueda a 20km y seguira aumentando el radio de busqueda haata encontrar algun aeropuerto
     si en la región de busqueda hay mas de un aeropuerto se selecciona el aeropuerto mas cercano a la ciudad 
     """
-    citydata = ciudad 
+    citydata = ciudad
     citylat = float(citydata['lat'])
     citylon = float(citydata['lng'])
     lista = lt.newList()
     km = 10
     while lt.size(lista) == 0:
-        area = areabusqueda(citylat,citylon,km) 
-        for iata in lt.iterator(gr.vertices(analyzer['rutas'])):
-          aero = m.get(analyzer['aeropuerto'],iata)['value']
-          aeroLat = float(aero['Latitude'])
-          aeroLon = float(aero['Longitude'])
-          if area[0] <= aeroLat and area[1] >= aeroLat:
-              if area[2] <= aeroLon and area[3] >= aeroLon:
-                  lt.addLast(lista,aero)
+        area = areabusqueda(citylat,citylon,km)
+        rangoLong = om.values(analyzer["aeropuertoLng"],area[2],area[3])
+        if lt.size(rangoLong) > 0:
+            for long in lt.iterator(rangoLong):
+                rangoLat = om.values(long["latitudeIndex"],area[0],area[1])
+                for lat in lt.iterator(rangoLat):
+                    for aero in lt.iterator(lat["lstAeros"]):
+                        lt.addLast(lista,aero)
         km += 10 
 
     if lt.size(lista) == 1:
@@ -361,6 +441,10 @@ def cityToairport(analyzer,ciudad):
                 min = dist(citylat, float(aero['Latitude']), citylon, float(aero['Longitude']))
                 aeropuerto = aero
         return aeropuerto 
+
+
+
+
 
 def rutasMin(grafo,vertice):
     return djk.Dijkstra(grafo,vertice)
@@ -395,6 +479,32 @@ def compareCiudades(ciudad1,ciudad2):
         return 1
     else:
         return -1
+
+
+def compareLongitude(lon1, lon2):
+    """
+    Compara dos longitudes
+    """
+    if (lon1 == lon2):
+        return 0
+    elif (lon1 > lon2):
+        return 1
+    else:
+        return -1
+
+
+
+def compareLatitude(lat1, lat2):
+    """
+    Compara dos latitudes
+    """
+    if (lat1 == lat2):
+        return 0
+    elif (lat1 > lat2):
+        return 1
+    else:
+        return -1
+
 
 # Funciones adicionales
 def iterador(lst):
@@ -454,3 +564,4 @@ def concatlist(lst1,lst2):
 
 def sublista(lista,posi,long):
     return lt.subList(lista,posi,long)
+    return lt.addLast(lista,elem)

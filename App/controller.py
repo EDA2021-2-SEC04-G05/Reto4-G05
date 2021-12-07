@@ -117,6 +117,14 @@ def servicioWebExterno(cont, ciudadinicial, ciudadfinal):
 def adyacencia(analyzer,iata):
     return model.adyacencia(analyzer,iata)
 
+def cityToairport(analyzer,ciudad):
+    return model.cityToairport(analyzer,ciudad)
+
+def rutasMin(grafo,vertice):
+    return model.rutasMin(grafo,vertice)
+
+def camino(paths,vertice):
+    return model.camino(paths,vertice)
 
 # Funciones para enmascarar
 def iterador(lst):
