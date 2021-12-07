@@ -156,6 +156,7 @@ def addDataAirport(analyzer,airport):
     iata = airport['IATA']
     m.put(analyzer['aeropuerto'],iata,airport)
     #lt.addLast(analyzer['IATA'],iata) 
+    addStop(analyzer, iata)
     updateLongitudeIndexAero(analyzer['aeropuertoLng'], airport)
 
 
@@ -279,6 +280,9 @@ def maxinterconexion(analyzer):
             dataairport = m.get(analyzer['aeropuerto'],iata)['value']
             lt.addLast(lstiata,dataairport)
     return (max,lstiata)
+    
+
+
 
 def encontrarClusteres(analyzer,aeroI,aeroF):
     """
@@ -325,35 +329,45 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
 
 def usarMillas(analyzer, ciudad, millas):
     """
-    GRAFICAR
-    map = folium.Map()
-    for aero in lt.iterator(m.keySet(analyzer['red']["distTo"])):
-        print(aero)
-    for aero in lt.iterator(m.valueSet(analyzer['red']["edgeTo"])):
-        a = me.getValue(m.get(analyzer["aeropuerto"],aero["vertexA"]))
-        b = me.getValue(m.get(analyzer["aeropuerto"],aero["vertexB"]))
-        folium.Marker(location=[a["Latitude"], a["Longitude"]]).add_to(map)
-        folium.Marker(location=[b["Latitude"], b["Longitude"]]).add_to(map)
-        folium.PolyLine(locations=[[float(a["Latitude"]), float(a["Longitude"])],[float(b["Latitude"]), float(b["Longitude"])]]).add_to(map)
-    map.save("mapaUFOS.html")
-    """
-    """
     Req 4
     """
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     aeropuerto = cityToairport(analyzer,ciudad)['IATA']
-    distancia = millas/3.2
+    distancia = millas*1.6
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
-    numNodos = m.size(analyzer["red"]['distTo'])
-    costoTotal = prim.weightMST(analyzer["rutasNoDirigido"],analyzer["red"])
+    numNodos = 0
+    listaNodos = lt.newList(datastructure='ARRAY_LIST')
+    for a in lt.iterator(m.valueSet(analyzer["red"]['edgeTo'])):
+        llegadaNodo = a['vertexA']
+        if not lt.isPresent(listaNodos,llegadaNodo):
+            lt.addLast(listaNodos, llegadaNodo)
+        salidaNodo = a['vertexB']
+        if not lt.isPresent(listaNodos,salidaNodo):
+            lt.addLast(listaNodos, salidaNodo)
+    numNodos = lt.size(listaNodos)
+    costoTotal = round(prim.weightMST(analyzer["rutasNoDirigido"],analyzer["red"]),2)
     visitadas = lt.newList(datastructure='ARRAY_LIST')
     recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
-    while distancia - recorrido >= 0:
-        distancia -= recorrido
-        aero = m.get(analyzer["red"]['edgeTo'], aeropuerto)['value']['vertexA']
-        lt.addLast(visitadas, aero)
-        aeropuerto = aero
-        recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
+    terminar = False
+    distanciaTotal = 0
+    while not terminar:
+        distancia -= recorrido*2
+        distanciaTotal += recorrido*2
+        aero = m.get(analyzer["red"]['edgeTo'], aeropuerto)
+        if aero:
+            llegada = aero['value']['vertexA']
+            salida = aero['value']['vertexB']
+            peso = aero['value']['weight']
+            ciudad = me.getValue(m.get(analyzer['aeropuerto'],llegada))["City"]
+            ruta = {"salida":salida,"llegada":llegada,"distancia":peso,"ciudad":ciudad}
+            lt.addLast(visitadas, ruta)
+            aeropuerto = llegada
+            recorrido = m.get(analyzer["red"]['distTo'], aeropuerto)['value']
+        else:
+            terminar = True
+
+    distanciaTotal = round(distanciaTotal,2)
+    distancia = round((distancia/1.6),2)
     
     ciudades = lt.newList(datastructure='ARRAY_LIST')
     for i in range (1,4):
@@ -371,6 +385,17 @@ def usarMillas(analyzer, ciudad, millas):
         
     return numNodos, costoTotal, ciudades
     
+    map = folium.Map()
+    for ruta in lt.iterator(visitadas):
+        a = me.getValue(m.get(analyzer["aeropuerto"],ruta["salida"]))
+        b = me.getValue(m.get(analyzer["aeropuerto"],ruta["llegada"]))
+        folium.Marker(location=[a["Latitude"], a["Longitude"]]).add_to(map)
+        folium.Marker(location=[b["Latitude"], b["Longitude"]]).add_to(map)
+        folium.PolyLine(locations=[[float(a["Latitude"]), float(a["Longitude"])],[float(b["Latitude"]), float(b["Longitude"])]]).add_to(map)
+    map.save("mapaMST.html")
+
+    return numNodos, costoTotal, visitadas, distanciaTotal, distancia
+    
 
 
 
@@ -378,27 +403,29 @@ def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
     """
     Req 6
     """
+    aeropuertos = json.dumps("AirportNearestRelevant_v1_Version_1.0_swagger_specification.json")
+    print(aeropuertos)
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
     h = {'content-type':  "application/x-www-form-urlencoded"}
     datos = "grant_type=client_credentials&client_id=iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l&client_secret=ZuKeobzwsVU6Es7g"
     response = requests.post(url, data=datos, headers= h)
     response_dict = json.loads(response.text)
     token = response_dict["access_token"]
-    latI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lat"])
-    lngI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lng"])
-    
-    url = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latI+"&longitude="+lngI
+    print(token)
+    url = "https://test.api.amadeus.com/v2/reference-data/urls/checkin-links?airline=IB"
     print(url)
     h = {'Authorization':  "Bearer "+token}
-    response2 = requests.post(url, headers= h)
+    response2 = requests.get(url, headers= h, json=aeropuertos)
+    print(response2)
     print(response2.content)
-    
     """
     latF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lat"])
     lngF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lng"])
+    latI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lat"])
+    lngI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lng"])
+    
+    amadeus.reference_data.locations.airports.get(longitude=, latitude=) 
     """
-
-
     pass
 
   
@@ -564,4 +591,5 @@ def concatlist(lst1,lst2):
 
 def sublista(lista,posi,long):
     return lt.subList(lista,posi,long)
+    return lt.addLast(lista,elem)
     return lt.addLast(lista,elem)

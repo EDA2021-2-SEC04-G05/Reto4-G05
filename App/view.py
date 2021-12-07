@@ -31,8 +31,8 @@ from DISClib.ADT import stack
 from prettytable import PrettyTable
 assert config
 
-routefile = 'routes_full.csv'
-airportfile = 'airports_full.csv'
+routefile = 'routes-utf8-large.csv'
+airportfile = 'airports-utf8-large.csv'
 cityfile = 'worldcities.csv'
 initialRoute = None
 
@@ -80,6 +80,8 @@ def maxaero(lstaero):
         x.add_row(renglon)
     print(x)
 
+
+
 def printClusteres(result):
     x = PrettyTable()
     x.field_names = ['Num. Total Clústeres', "Están Conectados"]
@@ -98,13 +100,16 @@ def printMillas(result):
     print(x)
     print("Se recomiendan visitar las siguientes ciudades de acuerdo a la cantidad de millas:")
     y = PrettyTable()
-    y.field_names = ['Ciudades']
+    y.field_names = ['Ciudades','Salida','Llegada','Distancia (km)']
     for ciudad in controller.iterador(result[2]):
-        renglon = [salto(str(ciudad),18)]
+        renglon = [salto(str(ciudad["ciudad"]),18), salto(str(ciudad["salida"]),18), salto(str(ciudad["llegada"]),18), salto(str(ciudad["distancia"]),18)]
         y.add_row(renglon)
     print(y)
-
-
+    print("Distancia máxima posible: ", round(result[3],2), " km")
+    if result[4] >= 0:
+        print("Después del viaje sobran ", result[4], " millas.")
+    else:
+        print("Se necesitan ", -1*result[4], " millas para completar el viaje.")
 
 def printmap(listaaero):
 
@@ -324,6 +329,10 @@ def thread_cycle():
             y.add_row([salto(carga[9]['city_ascii'],15),carga[9]['country'],carga[9]['population'],rd(carga[9]['lat']),rd(carga[9]['lng'])])
             print(y)
 
+            print('El total de vertices cargados en el grafo no dirigido es: ' + str(carga[4]))
+            print('El número de rutas cargadas en el grafo no dirigido es: ' + str(carga[5]))
+            print('El número de ciudades cargadas es: ' + str(carga[3]))
+                        
         elif int(inputs[0]) == 1:
             print('Determinando aeropuerto asociado a mayor número de rutas... ')
             total = controller.maxinterconexion(cont)
@@ -464,8 +473,9 @@ def thread_cycle():
                 citydatai = controller.ltgetElement(lciudades1['value'],selec)
             millas = int(input('Ingrese la cantidad de millas que tiene disponibles: '))
             result = controller.usarMillas(cont, citydatai, millas)
-            print("Red de expansión mínima: ")
             printMillas(result)
+            print("Se generó el archivo HTML, puede verse en la carpeta Reto4-G05")
+            
         
         elif int(inputs[0]) == 5:
             iata = input('Ingrese el código IATA del aeropuerto: ')
@@ -497,7 +507,7 @@ def thread_cycle():
             ciudadinicial = input('Ingrese la ciudad de origen (código ascii) : ')
             ciudadfinal = input('Ingrese la ciudad de destino (código ascii) : ')
             
-            result = controller.servicioWebExterno(cont, ciudadinicial, ciudadfinal)
+            result = controller.servicioWebExterno("cont", ciudadinicial, ciudadfinal)
 
 
 
