@@ -65,6 +65,7 @@ def newAnalyzer():
                     'rutas': None,
                     'components': None,
                     'paths': None,
+                    'pathsAPI': None,
                     'ciudades': None,
                     'red': None,
                     'IATA': None,
@@ -457,6 +458,7 @@ def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
     distancia = djk.distTo(analyzer["pathsAPI"], aeroFinal["iataCode"])
     distancia = round((distancia + aeroInicial['distance']['value'] + aeroFinal['distance']['value']),2)
     return camino, distancia
+
   
 
 def cityToairport(analyzer,ciudad):
