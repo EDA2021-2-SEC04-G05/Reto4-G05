@@ -496,10 +496,10 @@ def thread_cycle():
             else:
                 listavacia = listav 
             x = PrettyTable()
-            x.field_names = ['Nombre','Ciudad','Pais']
+            x.field_names = ['IATA','Nombre','Ciudad','Pais']
             for vertice in controller.iterador(listavacia):
                 data = controller.mget(cont['aeropuerto'],vertice)['value']
-                renglon = [data['Name'],data['City'],data['Country']]
+                renglon = [data['IATA'],salto(data['Name'],18),data['City'],data['Country']]
                 x.add_row(renglon)
             #x.sortby = 'Nombre'
             print(x)
