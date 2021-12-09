@@ -31,8 +31,8 @@ from DISClib.ADT import stack
 from prettytable import PrettyTable
 assert config
 
-routefile = 'routes-utf8-small.csv'
-airportfile = 'airports-utf8-small.csv'
+routefile = 'routes-utf8-large.csv'
+airportfile = 'airports-utf8-large.csv'
 cityfile = 'worldcities-utf8.csv'
 initialRoute = None
 
@@ -587,31 +587,7 @@ def thread_cycle():
                 print(x)
             
             print("Distancia total de la ruta: ", result[1])
-            result = controller.servicioWebExterno("cont", ciudadinicial, ciudadfinal)
-
             
-            
-            camino = result[0]
-            if camino is not None: 
-                x = PrettyTable()
-                x.field_names = ['Aeropuerto de salida','Aeropuerto de llegada','Distancia en km ']
-                pathlen = stack.size(camino)
-                print('El camino es de longitud: ' + str(pathlen))
-                lista = controller.ltnewList() 
-                conteo = 0 
-                while (not stack.isEmpty(camino)):
-                    stop = stack.pop(camino)
-                    aeropuertoS = controller.mget(cont['aeropuerto'],stop['vertexA'])['value']
-                    aeropuertoD = controller.mget(cont['aeropuerto'],stop['vertexB'])['value']
-                    distancia = stop['weight']
-                    x.add_row([aeropuertoS['Name'],aeropuertoD['Name'],distancia])
-                    if conteo == 0:
-                        controller.ltAddLast(lista,aeropuertoS) 
-                    conteo +=1 
-                    controller.ltAddLast(lista,aeropuertoD)
-                print(x)
-            
-            print("Distancia total de la ruta: ", result[1])
 
 
         else:

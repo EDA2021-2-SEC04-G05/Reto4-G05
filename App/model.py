@@ -24,8 +24,7 @@
  * Dario Correal - Version inicial
  """
 
-#import geopandas as gpd
-#from shapely.geometry import Polygon
+from shapely.geometry import Polygon
 import requests
 from requests.api import request
 from requests.models import LocationParseError, stream_decode_response_unicode
