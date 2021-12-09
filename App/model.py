@@ -24,7 +24,8 @@
  * Dario Correal - Version inicial
  """
 
-
+#import geopandas as gpd
+#from shapely.geometry import Polygon
 import requests
 from requests.api import request
 from requests.models import LocationParseError, stream_decode_response_unicode
@@ -95,6 +96,11 @@ def newAnalyzer():
 
         analyzer['aeropuertoLng'] = om.newMap(omaptype='RBT',
                                       comparefunction=compareLongitude)
+
+        analyzer['vuelos'] = m.newMap(numelements=14000,
+                                maptype='PROBING',
+                                comparefunction=compareIATA)
+
         return analyzer
     except Exception as exp:
         error.reraise(exp, 'model:newAnalyzer')
@@ -148,6 +154,10 @@ def addStop(analyzer, stopid):
             lt.addLast(analyzer['IATA'],stopid) 
         if not gr.containsVertex(analyzer['rutasNoDirigido'], stopid):
             gr.insertVertex(analyzer['rutasNoDirigido'], stopid)
+        aero = m.contains(analyzer['vuelos'],stopid)
+        if aero == False:
+            dict = {'entraV': lt.newList(),'saleV' : lt.newList()}
+            m.put(analyzer['vuelos'],stopid,dict)
         return analyzer
     except Exception as exp:
         error.reraise(exp, 'model:addstop')
@@ -158,8 +168,6 @@ def addDataAirport(analyzer,airport):
     #lt.addLast(analyzer['IATA'],iata) 
     addStop(analyzer, iata)
     updateLongitudeIndexAero(analyzer['aeropuertoLng'], airport)
-
-
 
 def updateLongitudeIndexAero(map, aero):
     """
@@ -240,7 +248,13 @@ def newLatitudeEntryAero(latitude):
     latitudentry['lstAeros'] = lt.newList('SINGLE_LINKED', compareLongitude)
     return latitudentry
 
-
+def addVuelo(analyzer,route):
+    iataS = route['Departure']
+    iataD = route['Destination']
+    listaS = m.get(analyzer['vuelos'],iataS)['value']['saleV']
+    listaD = m.get(analyzer['vuelos'],iataD)['value']['entraV']
+    lt.addLast(listaS,route)
+    lt.addLast(listaD,route)
 
 # Funciones para creacion de datos
 
@@ -264,24 +278,46 @@ def prueba(analyzer):
                 datoscity = data
             if data['id'] == id2:
                 datoscity2 = data
-    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades,numeroVertices2,numeroLados2,datosaero,datosaero2,datoscity,datoscity2]
+    vuelostotales = 0
+    for iata in lt.iterator(m.valueSet(analyzer['vuelos'])):
+        saleV = lt.size(iata['saleV'])
+        entraV = lt.size(iata['entraV'])
+        vuelostotales = vuelostotales + saleV + entraV 
+    vuelostotales = vuelostotales / 2 
+    return [numeroAirport,numeroVertices,numeroLados,numeroCiudades,numeroVertices2,numeroLados2,datosaero,datosaero2,datoscity,datoscity2,vuelostotales]
 
 def maxinterconexion(analyzer):
-    lista = gr.vertices(analyzer['rutas'])
-    max = 0
+    lista = m.valueSet(analyzer['vuelos'])
+    max = lt.newList()
+    lt.addFirst(max,0)
     for vertice in lt.iterator(lista):
-      total = gr.degree(analyzer['rutas'],vertice)
-      if total > max:
-        max = total
+      total = lt.size(vertice['saleV']) + lt.size(vertice['entraV'])
+      temp = lt.getElement(max,1)
+      if total > temp:
+          lt.addFirst(max,total)
+      else:
+          for i in range(2,lt.size(max)):
+              temp2 = lt.getElement(max,i)
+              if total > temp2 and total < lt.getElement(max,i-1):
+                  lt.insertElement(max,total,i)
+                  break
     lstiata = lt.newList() 
-    for vertice in lt.iterator(lista):
-        if gr.degree(analyzer['rutas'],vertice) == max:
-            iata = vertice
-            dataairport = m.get(analyzer['aeropuerto'],iata)['value']
-            lt.addLast(lstiata,dataairport)
-    return (max,lstiata)
+    listaK = m.keySet(analyzer['vuelos'])
+    for i in lt.iterator(max):
+        for vertice in lt.iterator(listaK):
+            dict = m.get(analyzer['vuelos'],vertice)['value']
+            grado = lt.size(dict['saleV']) + lt.size(dict['entraV'])
+            if grado == i:
+                iata = vertice
+                dataairport = m.get(analyzer['aeropuerto'],iata)['value']
+                dataairport['sale'] = str(lt.size(dict['saleV']))
+                dataairport['entra'] = str(lt.size(dict['entraV']))
+                dataairport['grado'] = str(grado)
+                lt.addLast(lstiata,dataairport)
+        if lt.size(lstiata) > 5:
+            break 
+    return (lt.getElement(max,1),lt.subList(lstiata,1,5))
     
-
 
 
 def encontrarClusteres(analyzer,aeroI,aeroF):
@@ -291,39 +327,47 @@ def encontrarClusteres(analyzer,aeroI,aeroF):
     analyzer['components'] = scc.KosarajuSCC(analyzer['rutas'])
     total = scc.connectedComponents(analyzer['components'])
     unidos = scc.stronglyConnected(analyzer['components'], aeroI, aeroF)
-    lstiata = lt.newList() 
-    dataairport1 = m.get(analyzer['aeropuerto'],aeroI)['value']
-    lt.addLast(lstiata,dataairport1)
-    dataairport2 = m.get(analyzer['aeropuerto'],aeroF)['value']
-    lt.addLast(lstiata,dataairport2)
+
     
     map = folium.Map()
     cluster1 = me.getValue(m.get(analyzer['components']["idscc"],aeroI))
     cluster2 = me.getValue(m.get(analyzer['components']["idscc"],aeroF))
-    lstcluster1 = lt.newList(datastructure='ARRAY_LIST')
-    lstcluster2 = lt.newList(datastructure='ARRAY_LIST')
+    dataairport1 = me.getValue(m.get(analyzer['aeropuerto'],aeroI))
+    dataairport2 = me.getValue(m.get(analyzer['aeropuerto'],aeroF))
+    lat_point_list1 = []
+    lon_point_list1 = []
+    lat_point_list2 = []
+    lon_point_list2 = []
     for aero1 in lt.iterator(m.keySet(analyzer['components']["idscc"])):
         if me.getValue(m.get(analyzer['components']["idscc"],aero1)) == cluster1:
-            lt.addLast(lstcluster1,aero1)
+            a = me.getValue(m.get(analyzer["aeropuerto"],aero1))
+            lat_point_list1.append(float(a["Latitude"]))
+            lon_point_list1.append(float(a["Longitude"]))
         if not unidos and me.getValue(m.get(analyzer['components']["idscc"],aero1)) == cluster2:
-            lt.addLast(lstcluster2,aero1)
-    for aeroIata in lt.iterator(lstcluster1):
-        a = me.getValue(m.get(analyzer["aeropuerto"],aeroIata))
-        folium.Marker(location=[a["Latitude"], a["Longitude"]], icon=folium.Icon(color="red")).add_to(map)
-    for aeroIata in lt.iterator(lstcluster2):
-        a = me.getValue(m.get(analyzer["aeropuerto"],aeroIata))
-        folium.Marker(location=[a["Latitude"], a["Longitude"]], icon=folium.Icon(color="blue")).add_to(map)
-    map.save("mapaClústeres.html")
+            a = me.getValue(m.get(analyzer["aeropuerto"],aero1))
+            lat_point_list2.append(float(a["Latitude"]))
+            lon_point_list2.append(float(a["Longitude"]))
     
-    return total, unidos, lstiata
-
-
-
-
-
-
-
-
+    if len(lat_point_list1) > 2:
+        polygon_geom = Polygon(zip(lon_point_list1, lat_point_list1))
+        polygon_geom2 = polygon_geom.convex_hull
+        folium.GeoJson(polygon_geom2, style_function= lambda x: {"color":"blue"}).add_to(map)
+    elif len(lat_point_list1) == 2:
+        folium.PolyLine(locations=[[float(lat_point_list1[0]), float(lon_point_list1[0])],[float(lat_point_list1[1]), float(lon_point_list1[1])]]).add_to(map)
+    
+    if len(lat_point_list2) > 2:
+        polygon_geom = Polygon(zip(lon_point_list2, lat_point_list2))
+        polygon_geom2 = polygon_geom.convex_hull
+        folium.GeoJson(polygon_geom2, style_function= lambda x: {"color":"red"}).add_to(map)
+    elif len(lat_point_list2) == 2:
+        folium.PolyLine(locations=[[float(lat_point_list2[0]), float(lon_point_list2[0])],[float(lat_point_list2[1]), float(lon_point_list2[1])]]).add_to(map)
+    
+    folium.Marker(location=[dataairport1["Latitude"], dataairport1["Longitude"]], icon=folium.Icon(color="blue")).add_to(map)
+    folium.Marker(location=[dataairport2["Latitude"], dataairport2["Longitude"]], icon=folium.Icon(color="red")).add_to(map)
+        
+    map.save("mapaClústeres.html")
+    return total, unidos
+   
 
 
 
@@ -334,7 +378,6 @@ def usarMillas(analyzer, ciudad, millas):
     analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     aeropuerto = cityToairport(analyzer,ciudad)['IATA']
     distancia = millas*1.6
-    analyzer["red"] = prim.PrimMST(analyzer["rutasNoDirigido"])
     numNodos = 0
     listaNodos = lt.newList(datastructure='ARRAY_LIST')
     for a in lt.iterator(m.valueSet(analyzer["red"]['edgeTo'])):
@@ -369,21 +412,6 @@ def usarMillas(analyzer, ciudad, millas):
     distanciaTotal = round(distanciaTotal,2)
     distancia = round((distancia/1.6),2)
     
-    ciudades = lt.newList(datastructure='ARRAY_LIST')
-    for i in range (1,4):
-        aero = lt.getElement(visitadas,i)
-        #ciudad = airportTocity(analyzer, aero)
-        lt.addLast(ciudades,ciudad)
-    tamanio = lt.size(visitadas)
-    #for i in range (tamanio-2,tamanio+1):
-    for i in lt.iterator(ciudades):
-        aero = lt.getElement(visitadas,i)
-        #ciudad = airportTocity(analyzer, aero)
-    for i in lt.iterator(visitadas):
-        ciudad = me.getValue(m.get(analyzer['aeropuerto'],i))["City"]
-        lt.addLast(ciudades,ciudad)
-        
-    return numNodos, costoTotal, ciudades
     
     map = folium.Map()
     for ruta in lt.iterator(visitadas):
@@ -403,37 +431,33 @@ def servicioWebExterno(analyzer, ciudadinicial, ciudadfinal):
     """
     Req 6
     """
-    aeropuertos = json.dumps("AirportNearestRelevant_v1_Version_1.0_swagger_specification.json")
-    print(aeropuertos)
+    latI = str(ciudadinicial["lat"])
+    lngI = str(ciudadinicial["lng"])
+    latF = str(ciudadfinal["lat"])
+    lngF = str(ciudadfinal["lng"])
     url = "https://test.api.amadeus.com/v1/security/oauth2/token"
     h = {'content-type':  "application/x-www-form-urlencoded"}
     datos = "grant_type=client_credentials&client_id=iHOE66ZfwQyCeaHC2hisL6ga2iR5GO8l&client_secret=ZuKeobzwsVU6Es7g"
     response = requests.post(url, data=datos, headers= h)
     response_dict = json.loads(response.text)
     token = response_dict["access_token"]
-    print(token)
-    url = "https://test.api.amadeus.com/v2/reference-data/urls/checkin-links?airline=IB"
-    print(url)
-    h = {'Authorization':  "Bearer "+token}
-    response2 = requests.get(url, headers= h, json=aeropuertos)
-    print(response2)
-    print(response2.content)
-    """
-    latF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lat"])
-    lngF = str(me.getValue(m.get(analyzer["ciudades"],ciudadfinal))["lng"])
-    latI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lat"])
-    lngI = str(me.getValue(m.get(analyzer["ciudades"],ciudadinicial))["lng"])
-    
-    amadeus.reference_data.locations.airports.get(longitude=, latitude=) 
-    """
-    pass
+    hToken = {'Authorization':  "Bearer "+token}
+    urlCityInicial = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latI+"&longitude="+lngI
+    responseInicial = requests.get(urlCityInicial, headers= hToken)
+    response_dictInicial = json.loads(responseInicial.text)
+    aeroInicial = response_dictInicial["data"][0]
 
+    urlCityFinal = "https://test.api.amadeus.com/v1/reference-data/locations/airports?latitude="+latF+"&longitude="+lngF
+    responseFinal = requests.get(urlCityFinal, headers= hToken)
+    response_dictFinal = json.loads(responseFinal.text)
+    aeroFinal = response_dictFinal["data"][0]  
+    
+    analyzer["pathsAPI"] = djk.Dijkstra(analyzer["rutas"],aeroInicial["iataCode"])
+    camino = djk.pathTo(analyzer["pathsAPI"], aeroFinal["iataCode"])
+    distancia = djk.distTo(analyzer["pathsAPI"], aeroFinal["iataCode"])
+    distancia = round((distancia + aeroInicial['distance']['value'] + aeroFinal['distance']['value']),2)
+    return camino, distancia
   
-
- 
-    
-
-
 
 def cityToairport(analyzer,ciudad):
     """

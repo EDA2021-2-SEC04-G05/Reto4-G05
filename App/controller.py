@@ -75,7 +75,8 @@ def loadServices(analyzer, routefile,airportfile,cityfile):
     for route in input_file:
         model.addAirport(analyzer,route)
         model.addRoute(analyzer,route)
-
+        model.addVuelo(analyzer,route)
+        
     for airport in input_file2:
         model.addDataAirport(analyzer,airport)
 
